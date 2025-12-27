@@ -26,10 +26,10 @@ enum CourseLevel: String, Codable{
     }
 }
 
-struct course: Identifiable, Codable {
+struct Course: Identifiable, Codable {
     let id: UUID
     let title: String
-    let level: String
+    let level: CourseLevel
     let duration: String
     let date: String
     let imageURL: String
