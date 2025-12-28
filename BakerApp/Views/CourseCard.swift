@@ -31,7 +31,7 @@ struct CourseCard: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
                     .background(course.level.themeColor)
-                    .foregroundColor(.secondaryBrown)
+                    .foregroundColor(course.level == .intermediate ? .secondaryBrown : .whitesh)
                     .cornerRadius(20)
                 
                 HStack(spacing: 4) {
