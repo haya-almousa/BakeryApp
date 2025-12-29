@@ -19,196 +19,195 @@ struct DetailsView: View {
     // Apple Developer Academy (temporary location)
     private let locationName = "Apple Developer Academy"
     private let locationCoordinate = CLLocationCoordinate2D(latitude: 24.713551, longitude: 46.675297)
-    @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 24.713551, longitude: 46.675297),
-        span: MKCoordinateSpan(latitudeDelta: 0.008, longitudeDelta: 0.008)
+    // iOS 17+ Map camera position (replaces MKCoordinateRegion binding)
+    @State private var cameraPosition: MapCameraPosition = .region(
+        MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 24.713551, longitude: 46.675297),
+            span: MKCoordinateSpan(latitudeDelta: 0.008, longitudeDelta: 0.008)
+        )
     )
     
     var body: some View {
         ZStack {
             Color(UIColor.systemGray6).ignoresSafeArea()
             
-            VStack(spacing: 0) {
-                ScrollView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Top image
+                    AsyncImage(url: URL(string: course.imageURL)) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        Rectangle()
+                            .fill(Color(.systemGray5))
+                    }
+                    .frame(height: 240)
+                    .clipped()
+                    
+                    // Content card
                     VStack(alignment: .leading, spacing: 16) {
-                        // Top image
-                        AsyncImage(url: URL(string: course.imageURL)) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        } placeholder: {
-                            Rectangle()
-                                .fill(Color(.systemGray5))
-                        }
-                        .frame(height: 240)
-                        .clipped()
                         
-                        // Content card
-                        VStack(alignment: .leading, spacing: 16) {
-                            
-                            // Title
-                            Text(course.title)
-                                .font(.title3.weight(.semibold))
-                                .foregroundColor(.primary)
-                            
-                            // About the course
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("About the course:")
-                                    .font(.headline)
-                                
-                                Text("""
-                                Needless to say, you will learn new techniques, new ingredients, and new recipes when taking a baking class. Not only that, but baking also involves creating food presentations and plating.
-                                """)
-                                .font(.callout)
-                                .foregroundColor(Color(.label))
-                                .fixedSize(horizontal: false, vertical: true)
-                            }
-                            
-                            // Info grid
-                            VStack(alignment: .leading, spacing: 12) {
-                                HStack(alignment: .top) {
-                                    // Left column
-                                    VStack(alignment: .leading, spacing: 12) {
-                                        labeledValue(label: "Chef", valueView:
-                                            Text("Ali Boholaiqa")
-                                                .foregroundColor(.primary)
-                                        )
-                                        
-                                        labeledValue(label: "Level", valueView:
-                                            Text(course.level.rawValue)
-                                                .font(.caption.weight(.semibold))
-                                                .padding(.vertical, 4)
-                                                .padding(.horizontal, 10)
-                                                .background(course.level.themeColor)
-                                                .foregroundColor(.brown) // بديل مؤقت لـ .secondaryBrown
-                                                .clipShape(Capsule())
-                                        )
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    
-                                    // Right column
-                                    VStack(alignment: .leading, spacing: 12) {
-                                        labeledValue(label: "Duration", valueView:
-                                            Text(course.duration)
-                                                .foregroundColor(.primary)
-                                        )
-                                        
-                                        labeledValue(label: "Date & time", valueView:
-                                            Text(course.date)
-                                                .foregroundColor(.primary)
-                                        )
-                                        
-                                        labeledValue(label: "Location", valueView:
-                                            Text(locationName)
-                                                .foregroundColor(.primary)
-                                        )
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                            }
-                        }
-                        .padding(16)
-                        .background(Color(.systemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(Color(.systemGray5), lineWidth: 1)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 12)
+                        // Title
+                        Text(course.title)
+                            .font(.title3.weight(.semibold))
+                            .foregroundColor(.primary)
                         
-                        // MARK: - Map block (temporary Apple Developer Academy)
+                        // About the course
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Location")
+                            Text("About the course:")
                                 .font(.headline)
-                                .padding(.horizontal, 16)
                             
-                            VStack(spacing: 12) {
-                                Map(coordinateRegion: $region, annotationItems: [MapPinItem(coordinate: locationCoordinate)]) { item in
-                                    MapMarker(coordinate: item.coordinate, tint: .brown)
+                            Text("""
+                            Needless to say, you will learn new techniques, new ingredients, and new recipes when taking a baking class. Not only that, but baking also involves creating food presentations and plating.
+                            """)
+                            .font(.callout)
+                            .foregroundColor(Color(.label))
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                        
+                        // Info grid
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(alignment: .top) {
+                                // Left column
+                                VStack(alignment: .leading, spacing: 12) {
+                                    labeledValue(label: "Chef", valueView:
+                                        Text("Ali Boholaiqa")
+                                            .foregroundColor(.primary)
+                                    )
+                                    
+                                    labeledValue(label: "Level", valueView:
+                                        Text(course.level.rawValue)
+                                            .font(.caption.weight(.semibold))
+                                            .padding(.vertical, 4)
+                                            .padding(.horizontal, 10)
+                                            .background(course.level.themeColor)
+                                            .foregroundColor(.brown)
+                                            .clipShape(Capsule())
+                                    )
                                 }
-                                .frame(height: 180)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .stroke(Color(.systemGray5), lineWidth: 1)
-                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 
+                                // Right column
+                                VStack(alignment: .leading, spacing: 12) {
+                                    labeledValue(label: "Duration", valueView:
+                                        Text(course.duration)
+                                            .foregroundColor(.primary)
+                                    )
+                                    
+                                    labeledValue(label: "Date & time", valueView:
+                                        Text(course.date)
+                                            .foregroundColor(.primary)
+                                    )
+                                    
+                                    labeledValue(label: "Location", valueView:
+                                        Text(locationName)
+                                            .foregroundColor(.primary)
+                                    )
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                    }
+                    .padding(16)
+                    .background(Color(.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color(.systemGray5), lineWidth: 1)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    
+                    // MARK: - Map block (temporary Apple Developer Academy)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Location")
+                            .font(.headline)
+                            .padding(.horizontal, 16)
+                        
+                        VStack(spacing: 12) {
+                            // New iOS 17 Map API using MapContentBuilder
+                            Map(position: $cameraPosition) {
+                                // Single marker for the academy location
+                                Marker(locationName, coordinate: locationCoordinate)
+                                    .tint(.brown)
+                            }
+                            .frame(height: 180)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color(.systemGray5), lineWidth: 1)
+                            )
+                            
+                            Button {
+                                openInMaps(at: locationCoordinate, named: locationName)
+                            } label: {
+                                Label("Open in Maps", systemImage: "map")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(.brown)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(.systemGray6))
+                                    )
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        
+                        // زر الحجز أسفل الماب مباشرة (جزء من المحتوى)
+                        VStack {
+                            if isBooked {
                                 Button {
-                                    openInMaps(at: locationCoordinate, named: locationName)
+                                    showCancelAlert = true
                                 } label: {
-                                    Label("Open in Maps", systemImage: "map")
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundColor(.brown)
+                                    Text("Cancel booking")
+                                        .font(.headline)
+                                        .foregroundColor(.red)
                                         .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 10)
+                                        .padding(.vertical, 14)
                                         .background(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(Color(.systemGray6))
+                                            RoundedRectangle(cornerRadius: 14)
+                                                .fill(Color(.systemBackground))
                                         )
                                 }
-                            }
-                            .padding(.horizontal, 16)
-                        }
-                        .padding(.top, 8)
-                        
-                        Spacer(minLength: 80) // مساحة فوق الزر
-                    }
-                }
-                
-                // Bottom fixed button
-                VStack {
-                    if isBooked {
-                        // زر إلغاء الحجز
-                        Button {
-                            showCancelAlert = true
-                        } label: {
-                            Text("Cancel booking")
-                                .font(.headline)
-                                .foregroundColor(.red)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .fill(Color(.systemBackground))
-                                )
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(.clear)
-                    } else {
-                        // زر الحجز
-                        Button {
-                            isBooked = true
-                            // عرض كارد النجاح في المنتصف
-                            showSuccessCard = true
-                            // إخفاء تلقائي بعد 2 ثانية
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                withAnimation(.easeInOut) {
-                                    showSuccessCard = false
+                                .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 4)
+                            } else {
+                                Button {
+                                    isBooked = true
+                                    showSuccessCard = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                        withAnimation(.easeInOut) {
+                                            showSuccessCard = false
+                                        }
+                                    }
+                                } label: {
+                                    Text("Book a space")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 16)
+                                        .background(Color.brown)
+                                        .clipShape(RoundedRectangle(cornerRadius: 16))
                                 }
+                                .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
                             }
-                        } label: {
-                            Text("Book a space")
-                                .font(.headline)
-                                .foregroundColor(.white) // بديل لـ whitesh
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Color.brown) // بديل لـ secondaryBrown
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(.clear)
+                        .padding(.top, 4)
+                        .padding(.bottom, 14)
                     }
+                    .padding(.top, 4)
+                    
+                    // مسافة عامة إضافية قبل التاب بار
+                    Spacer(minLength: 32)
                 }
-                .background(Color(UIColor.systemGray6).ignoresSafeArea(edges: .bottom))
             }
             
             // Overlay: كارد النجاح الصغير في المنتصف
             if showSuccessCard {
                 SuccessCard()
-                    .transition(.scale.combined(with: .opacity))
+                    .transition(.scale .combined(with: .opacity))
                     .onTapGesture {
                         withAnimation(.easeInOut) {
                             showSuccessCard = false
@@ -218,13 +217,11 @@ struct DetailsView: View {
         }
         .navigationTitle(course.title)
         .navigationBarTitleDisplayMode(.inline)
-        // احتفظت بالـ Alert القديم لو حبيت تستخدمه لاحقًا (غير مستخدم الآن)
         .alert("Booked!", isPresented: $showBookedAlert) {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Your spot has been reserved.")
         }
-        // Alert تأكيد إلغاء الحجز
         .alert("Cancel booking?", isPresented: $showCancelAlert) {
             Button("No", role: .cancel) { }
             Button("Yes", role: .destructive) {
@@ -234,9 +231,15 @@ struct DetailsView: View {
             Text("Do you want to cancel your booking")
         }
         .onAppear {
-            // sync the region with the coordinate in case you pass different locations later
-            region.center = locationCoordinate
+            // Ensure initial camera is centered on the location
+            cameraPosition = .region(
+                MKCoordinateRegion(
+                    center: locationCoordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.008, longitudeDelta: 0.008)
+                )
+            )
         }
+        // أزلنا safeAreaInset لأن الزر صار جزء من المحتوى تحت الماب
     }
     
     @ViewBuilder
