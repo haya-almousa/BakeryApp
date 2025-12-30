@@ -16,6 +16,11 @@
 			path = BakerApp;
 			sourceTree = "<group>";
 		};
+		54D11E852F03E5BE00895EE4 /* Profile */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Profile;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -34,6 +39,7 @@
 			children = (
 				5442DFB62EFD5A7F00C755AF /* BakerApp */,
 				5442DFB52EFD5A7F00C755AF /* Products */,
+				54D11E852F03E5BE00895EE4 /* Profile */,
 			);
 			sourceTree = "<group>";
 		};
@@ -62,6 +68,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				5442DFB62EFD5A7F00C755AF /* BakerApp */,
+				54D11E852F03E5BE00895EE4 /* Profile */,
 			);
 			name = BakerApp;
 			packageProductDependencies = (
