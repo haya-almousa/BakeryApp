@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		5442DFB42EFD5A7F00C755AF /* BakerApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BakerApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5442DFB42EFD5A7F00C755AF /* BakerApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = BakerApp.app; path = "/Users/hayaalmousa/Documents/BakeryApp/build/Debug-iphoneos/BakerApp.app"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -38,17 +38,8 @@
 			isa = PBXGroup;
 			children = (
 				5442DFB62EFD5A7F00C755AF /* BakerApp */,
-				5442DFB52EFD5A7F00C755AF /* Products */,
 				54D11E852F03E5BE00895EE4 /* Profile */,
 			);
-			sourceTree = "<group>";
-		};
-		5442DFB52EFD5A7F00C755AF /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				5442DFB42EFD5A7F00C755AF /* BakerApp.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -102,7 +93,7 @@
 			mainGroup = 5442DFAB2EFD5A7F00C755AF;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 5442DFB52EFD5A7F00C755AF /* Products */;
+			productRefGroup = 5442DFAB2EFD5A7F00C755AF;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
