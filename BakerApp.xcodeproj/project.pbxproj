@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		5442DFB42EFD5A7F00C755AF /* BakerApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = BakerApp.app; path = "/Users/hayaalmousa/Documents/BakeryApp/build/Debug-iphoneos/BakerApp.app"; sourceTree = "<absolute>"; };
+		54647FD62F04087C00CC05CC /* BakerApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BakerApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -33,6 +33,7 @@
 			isa = PBXGroup;
 			children = (
 				5442DFB62EFD5A7F00C755AF /* BakerApp */,
+				54647FD62F04087C00CC05CC /* BakerApp.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -58,7 +59,7 @@
 			packageProductDependencies = (
 			);
 			productName = BakerApp;
-			productReference = 5442DFB42EFD5A7F00C755AF /* BakerApp.app */;
+			productReference = 54647FD62F04087C00CC05CC /* BakerApp.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
