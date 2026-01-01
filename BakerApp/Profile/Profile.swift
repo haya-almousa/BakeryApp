@@ -68,7 +68,7 @@ private extension BookingsProfileView {
                 // تكديس عناصر صورة البروفايل
 
                 Circle()
-                    .fill(Color(.systemBrown).withAlphaComponent(0.25))
+                    .fill(Color(.systemBrown).opacity(0.25))
                     .frame(width: 44, height: 44)
                 // دائرة خلفية بلون بني شفاف
 
@@ -270,7 +270,7 @@ struct BookedCourseCard: View {
                     .font(.caption.weight(.semibold))
                     .padding(.vertical, 4)
                     .padding(.horizontal, 8)
-                    .background(Color(.systemBrown).withAlphaComponent(0.18))
+                    .background(Color(.systemBrown).opacity(0.18))
                     .foregroundStyle(.brown)
                     .clipShape(Capsule())
                 // شارة المستوى
@@ -321,4 +321,3 @@ struct BookedCourseCard: View {
     BookingsProfileView()
     // عرض شاشة البروفايل
 }
-
