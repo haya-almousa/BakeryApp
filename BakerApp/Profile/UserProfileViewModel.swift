@@ -6,49 +6,112 @@
 //
 
 import Foundation
+// استيراد Foundation للأنواع الأساسية
+
 import Combine
+// استيراد Combine (لاستخدامه مستقبلاً إن لزم، رغم أننا نستخدم Concurrency)
 
 @MainActor
+// تنفيذ كل تحديثات الحالة على المسار الرئيسي
+
 final class UserProfileViewModel: ObservableObject {
+    // ViewModel يدير حالة شاشة البروفايل
 
     @Published var name: String = ""
+    // اسم المستخدم المعروض
+
     @Published var email: String = ""
+    // إيميل المستخدم المعروض
+
     @Published var isLoading: Bool = false
+    // حالة تدل على وجود تحميل جارٍ
+
     @Published var errorMessage: String?
+    // رسالة خطأ لعرضها عند الفشل
 
     private let api = UserAPI.shared
-    // استخدام Singleton
+    // مرجع لخدمة الـ API (Singleton)
+
+    private var loadTask: Task<Void, Never>?
+    // الاحتفاظ بمهمة التحميل الحالية لإمكانية إلغائها عند بدء تحميل جديد
 
     func loadProfile(email userEmail: String) {
-        // تحميل بيانات البروفايل
+        // دالة لتحميل بيانات البروفايل حسب الإيميل
+
         let trimmedEmail = userEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+        // تنظيف الإيميل من الفراغات
+
         guard !trimmedEmail.isEmpty else {
+            // التحقق من أن الإيميل غير فارغ
+
             errorMessage = "Missing email."
+            // ضبط رسالة خطأ مناسبة
+
             return
+            // إيقاف التنفيذ
         }
 
-        isLoading = true
-        errorMessage = nil
+        loadTask?.cancel()
+        // إلغاء أي تحميل سابق قيد التنفيذ
 
-        Task {
+        isLoading = true
+        // بدء حالة التحميل
+
+        errorMessage = nil
+        // مسح أي أخطاء سابقة
+
+        loadTask = Task { [weak self] in
+            // إنشاء مهمة غير متزامنة لتحميل البيانات
+
+            guard let self else { return }
+            // التأكد من وجود self
+
             do {
                 let user = try await api.fetchUser(byEmail: trimmedEmail)
-                name = user.name ?? ""
-                email = user.email ?? trimmedEmail
-                isLoading = false
+                // استدعاء API لجلب المستخدم عبر الإيميل
+
+                self.name = user.name ?? ""
+                // حفظ الاسم (أو فارغ إذا غير موجود)
+
+                self.email = user.email ?? trimmedEmail
+                // حفظ الإيميل (أو المدخل إذا غير موجود)
+
+                self.isLoading = false
+                // إنهاء حالة التحميل
+            } catch is CancellationError {
+                // إذا تم إلغاء المهمة
+
+                // تجاهل الإلغاء بدون تغيير الحالة
             } catch {
-                isLoading = false
-                // عرض وصف الخطأ القادم من APIError إن وجد
-                errorMessage = (error as? LocalizedError)?.errorDescription ?? "Failed to load profile"
+                // أي خطأ آخر
+
+                self.isLoading = false
+                // إنهاء حالة التحميل
+
+                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "Failed to load profile"
+                // ضبط رسالة خطأ مقروءة للمستخدم
             }
         }
     }
 
     func reset() {
-        // إعادة تعيين حالة العرض عند تسجيل الخروج
+        // إعادة تعيين حالة الـ ViewModel (عند تسجيل الخروج)
+
+        loadTask?.cancel()
+        // إلغاء أي مهام جارية
+
         name = ""
+        // مسح الاسم
+
         email = ""
+        // مسح الإيميل
+
         isLoading = false
+        // إيقاف حالة التحميل
+
         errorMessage = nil
+        // مسح رسالة الخطأ
     }
 }
+// نهاية UserProfileViewModel
+

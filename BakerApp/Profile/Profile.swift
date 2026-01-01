@@ -6,424 +6,319 @@
 //
 
 import SwiftUI
-// نستورد SwiftUI لأن الواجهة مبنية بـ SwiftUI.
-//hayafff
-struct BookingsProfileView: View
-// نعرّف View للشاشة.
+// استيراد SwiftUI لبناء الواجهة
 
-{
+struct BookingsProfileView: View {
+    // شاشة تعرض بروفايل المستخدم مع قائمة حجوزاته
+
     @State private var username: String = "Ali Boholaiqa"
-    // @State لأن الاسم بيتغير من داخل نفس الشاشة (Editing).
+    // اسم المستخدم القابل للتعديل محليًا
 
     @State private var isEditing: Bool = false
-    // حالة للتحكم: هل المستخدم الآن في وضع تعديل الاسم أم لا.
+    // حالة تحدد إن كان المستخدم يعدّل الاسم الآن
 
     @State private var bookedCourses: [BookedCourse] = []
-    // بيانات مؤقتة للـ UI الآن (بعدها نربطها بـ API).
-    
-    var body: some View
-    // body هو محتوى الواجهة.
+    // قائمة الحجوزات (بيانات مؤقتة للعرض)
 
-    {
-        NavigationStack
-        // أحدث أسلوب للتنقل في SwiftUI (بديل NavigationView).
+    var body: some View {
+        // جسم الواجهة
 
-        {
-            ScrollView
-            // نخلي الشاشة قابلة للتمرير لأن قائمة الحجوزات قد تطول.
+        NavigationStack {
+            // حاوية تنقل حديثة
 
-            {
-                VStack(spacing: 16)
-                // نرتّب العناصر عموديًا مع مسافة ثابتة.
+            ScrollView {
+                // محتوى قابل للتمرير
 
-                {
+                VStack(spacing: 16) {
+                    // ترتيب عمودي للعناصر مع مسافات
+
                     profileHeader
-                    // الهيدر: صورة/أيقونة + اسم + زر Edit/Done.
+                    // قسم الهيدر: صورة/أيقونة + اسم + زر تعديل
 
                     bookedCoursesSection
-                    // القسم: عنوان Booked courses + (قائمة أو Empty state).
+                    // قسم الحجوزات: عنوان + قائمة أو حالة فارغة
                 }
                 .padding(.horizontal, 16)
-                // حواف جانبية مطابقة لستايل iOS.
-                
+                // حواف جانبية موحّدة
+
                 .padding(.top, 12)
-                // مسافة علوية بسيطة مثل التصميم.
+                // مسافة علوية بسيطة
             }
             .navigationTitle("Profile")
-            // عنوان الشاشة في الـ Navigation bar.
+            // عنوان شريط التنقل
 
             .navigationBarTitleDisplayMode(.inline)
-            // عرض العنوان بشكل صغير (Inline) مثل الصور.
+            // عرض العنوان بشكل مضغوط
         }
     }
+    // نهاية body
 }
+// نهاية BookingsProfileView
 
-// MARK: - Subviews
-// تقسيم الواجهة لأجزاء صغيرة: أنظف وأسهل للصيانة.
+private extension BookingsProfileView {
+    // امتداد لكتابة الأجزاء الفرعية بشكل منظم
 
-private extension BookingsProfileView
-// نخلي الـ subviews داخل extension لتكون مرتبة.
+    var profileHeader: some View {
+        // واجهة هيدر البروفايل
 
-{
-    var profileHeader: some View
-    // جزء الهيدر في أعلى الصفحة.
+        HStack(spacing: 12) {
+            // صف: أيقونة + اسم + زر
 
-    {
-        HStack(spacing: 12)
-        // صف: أيقونة + اسم + زر.
+            ZStack {
+                // تكديس عناصر صورة البروفايل
 
-        {
-            ZStack
-            // نستخدم ZStack لعمل دائرة + علامة (+) الصغيرة فوقها.
-
-            {
                 Circle()
-                // دائرة للخلفية مثل صورة البروفايل.
-
-                .fill(Color(.systemBrown).opacity(0.25))
-                // لون قريب من التصميم وبأسلوب System Color.
-
-                .frame(width: 44, height: 44)
-                // حجم الأيقونة.
+                    .fill(Color(.systemBrown).withAlphaComponent(0.25))
+                    .frame(width: 44, height: 44)
+                // دائرة خلفية بلون بني شفاف
 
                 Image(systemName: "person")
-                // أيقونة شخص بدل صورة فعلية الآن.
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.brown)
+                // أيقونة شخص في الوسط
 
-                .font(.system(size: 20, weight: .semibold))
-                // حجم ووزن مناسبين.
-                
-                .foregroundStyle(.brown)
-                // نفس روح ألوان التطبيق.
+                VStack {
+                    // لتثبيت علامة الإضافة بالأسفل
 
-                VStack
-                // عمود لتثبيت علامة + بأسفل يسار الدائرة.
-
-                {
                     Spacer()
-                    // يدفع المحتوى للأسفل.
+                    // دفع المحتوى للأسفل
 
-                    HStack
-                    // صف لتثبيت + على اليسار.
+                    HStack {
+                        // صف لعلامة الإضافة
 
-                    {
                         Circle()
-                        // دائرة صغيرة للخلفية.
-
-                        .fill(Color(.systemBrown))
-                        // لون العلامة.
-
-                        .frame(width: 18, height: 18)
-                        // حجم العلامة.
+                            .fill(Color(.systemBrown))
+                            .frame(width: 18, height: 18)
+                        // دائرة صغيرة للخلفية
 
                         Image(systemName: "plus")
-                        // رمز +.
-
-                        .font(.system(size: 10, weight: .bold))
-                        // حجم مناسب داخل الدائرة.
-
-                        .foregroundStyle(.white)
-                        // لون أبيض ليوضح.
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(.white)
+                        // علامة + باللون الأبيض
                     }
                     Spacer()
-                    // يخليها جهة اليسار.
+                    // لإبقاء العلامة يسار-أسفل
                 }
                 .frame(width: 44, height: 44)
-                // نفس إطار الصورة عشان مكانها مضبوط.
+                // نفس حجم الدائرة الأساسية لضبط التموضع
             }
 
-            if isEditing
-            // لو وضع التعديل شغال.
+            if isEditing {
+                // عند تفعيل وضع التعديل
 
-            {
                 TextField("username", text: $username)
-                // حقل لتعديل الاسم مرتبط بـ @State.
+                    .textInputAutocapitalization(.words)
+                    .disableAutocorrection(true)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 12)
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                // حقل نص لتعديل الاسم مع تنسيقات مناسبة
+            } else {
+                // عرض الاسم فقط بدون تعديل
 
-                .textInputAutocapitalization(.words)
-                // يحسن تجربة إدخال الاسم.
-
-                .disableAutocorrection(true)
-                // نلغي التصحيح لأنه ممكن يخرّب الأسماء.
-
-                .padding(.vertical, 10)
-                // ارتفاع داخل الحقل.
-
-                .padding(.horizontal, 12)
-                // حواف داخلية.
-
-                .background(Color(.systemGray6))
-                // خلفية خفيفة مثل iOS.
-
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                // زوايا ناعمة.
-            }
-            else
-            // لو عرض عادي بدون تعديل.
-
-            {
                 Text(username)
-                // نعرض الاسم كنص.
-
-                .font(.headline)
-                // حجم عنوان صغير مثل التصميم.
+                    .font(.headline)
+                // عرض الاسم بخط بارز
             }
 
             Spacer()
-            // يدفع زر Edit/Done لآخر يمين السطر.
+            // دفع زر التعديل لليمين
 
-            Button(isEditing ? "Done" : "Edit")
-            // نفس الزر يتغير حسب الحالة.
+            Button(isEditing ? "Done" : "Edit") {
+                // زر تبديل وضع التعديل
 
-            {
                 isEditing.toggle()
-                // تبديل وضع التعديل.
+                // قلب حالة التعديل
             }
             .font(.callout.weight(.semibold))
-            // شكل الزر قريب من iOS.
+            // تنسيق نص الزر
 
             .foregroundStyle(.brown)
-            // لون مطابق لتصميمكم.
+            // لون الزر
         }
         .padding(16)
-        // حواف داخل الكارد.
+        // حواف داخلية للكارد
 
         .background(Color(.systemBackground))
-        // خلفية كارد متوافقة مع لايت/دارك.
+        // خلفية متوافقة مع الثيم
 
         .clipShape(RoundedRectangle(cornerRadius: 14))
-        // كارد بحواف ناعمة.
+        // زوايا ناعمة للكارد
 
-        .overlay
-        // إطار خفيف للكارد.
+        .overlay {
+            // إطار خفيف حول الكارد
 
-        {
             RoundedRectangle(cornerRadius: 14)
-            // نفس شكل الكارد.
-
-            .stroke(Color(.systemGray5), lineWidth: 1)
-            // خط حدود بسيط.
+                .strokeBorder(Color(.systemGray5), lineWidth: 1)
+            // خط حدود خفيف
         }
     }
+    // نهاية profileHeader
 
-    var bookedCoursesSection: some View
-    // قسم الحجوزات.
+    var bookedCoursesSection: some View {
+        // قسم يعرض عنوان الحجوزات ومحتواها
 
-    {
-        VStack(alignment: .leading, spacing: 12)
-        // عنوان ثم محتوى.
+        VStack(alignment: .leading, spacing: 12) {
+            // ترتيب عمودي بمحاذاة لليسار
 
-        {
             Text("Booked courses")
-            // عنوان القسم.
+                .font(.title3.weight(.bold))
+            // عنوان القسم
 
-            .font(.title3.weight(.bold))
-            // نفس قوة العنوان في الصور تقريبًا.
+            if bookedCourses.isEmpty {
+                // حالة لا توجد حجوزات
 
-            if bookedCourses.isEmpty
-            // لو ما عند المستخدم حجوزات.
-
-            {
                 emptyState
-                // نعرض Empty state (الصورة + النص).
-            }
-            else
-            // لو فيه حجوزات.
+                // عرض حالة فارغة
+            } else {
+                // توجد حجوزات
 
-            {
-                VStack(spacing: 12)
-                // قائمة كروت.
+                VStack(spacing: 12) {
+                    // قائمة كروت الحجوزات
 
-                {
-                    ForEach(bookedCourses)
-                    // نكرر عناصر الحجوزات.
+                    ForEach(bookedCourses) { course in
+                        // تكرار لكل حجز
 
-                    { course in
                         BookedCourseCard(course: course)
-                        // كارد لكل كورس.
+                        // كارد يعرض تفاصيل الحجز
                     }
                 }
             }
         }
         .padding(.top, 4)
-        // مسافة بسيطة فوق العنوان.
+        // مسافة بسيطة فوق القسم
     }
+    // نهاية bookedCoursesSection
 
-    var emptyState: some View
-    // واجهة حالة الفراغ.
+    var emptyState: some View {
+        // واجهة حالة عدم وجود حجوزات
 
-    {
-        VStack(spacing: 10)
-        // عناصر فوق بعض.
+        VStack(spacing: 10) {
+            // ترتيب عمودي بعناصر متباعدة
 
-        {
             Image("CoursesTab")
-            // أيقونة بديلة—لو عندكم صورة الشوبنج/الرول نبدلها لاحقًا.
-
-            .font(.system(size: 54))
-            // حجم واضح.
-
-            .foregroundStyle(Color(.systemGray3))
-            // لون رمادي خفيف مثل التصميم.
+                .font(.system(size: 54))
+                .foregroundStyle(Color(.systemGray3))
+            // أيقونة توضيحية
 
             Text("You don't have any booked courses")
-            // النص الموجود بالصورة.
-
-            .font(.callout)
-            // حجم مناسب.
-
-            .foregroundStyle(Color(.systemGray2))
-            // نفس درجة الرمادي.
+                .font(.callout)
+                .foregroundStyle(Color(.systemGray2))
+            // نص يشرح الحالة
         }
         .frame(maxWidth: .infinity)
-        // يخليها تتمركز.
-        
+        // تمديد أفقي للتمركز
+
         .padding(.vertical, 28)
-        // مساحة أعلى وأسفل مثل الصورة.
+        // مسافة عمودية مناسبة
     }
+    // نهاية emptyState
 }
+// نهاية الامتداد
 
-// MARK: - Models (Temporary for UI)
-// موديلات مؤقتة للـ UI. لاحقًا نبدلها بموديلات API.
+struct BookedCourse: Identifiable {
+    // نموذج مؤقت يمثل الحجز لعرضه في الواجهة
 
-struct BookedCourse: Identifiable
-// نجعلها Identifiable عشان ForEach.
-
-{
     let id: UUID = UUID()
-    // معرّف محلي مؤقت للتمييز بين العناصر.
+    // معرّف فريد لكل عنصر
 
     let title: String
-    // اسم الكورس.
+    // عنوان الكورس
 
     let level: String
-    // مستوى الكورس (Beginner/Intermediate/Advanced).
+    // مستوى الكورس
 
     let durationText: String
-    // مدة مثل "2h".
+    // مدة الكورس بشكل نص
 
     let dateText: String
-    // تاريخ مثل "19 Feb - 4:00".
+    // تاريخ/وقت الكورس بشكل نص
 
     let imageName: String
-    // اسم صورة محلية مؤقتة (أو لاحقًا URL).
+    // اسم الصورة في الأصول
 }
+// نهاية BookedCourse
 
-// MARK: - Course Card
-// كارد شكل الكورس المحجوز.
+struct BookedCourseCard: View {
+    // كارد يعرض تفاصيل حجز واحد
 
-struct BookedCourseCard: View
-// View منفصلة للكارد.
-
-{
     let course: BookedCourse
-    // نستقبل بيانات الكورس.
+    // بيانات الحجز المعروضة
 
-    var body: some View
-    // محتوى الكارد.
+    var body: some View {
+        // جسم الكارد
 
-    {
-        HStack(spacing: 12)
-        // صورة يسار + معلومات يمين.
+        HStack(spacing: 12) {
+            // صورة يسار + تفاصيل يمين
 
-        {
             Image(course.imageName)
-            // صورة من Assets الآن (بعدها URL).
+                .resizable()
+                .scaledToFill()
+                .frame(width: 78, height: 64)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            // صورة مصغرة للكورس
 
-            .resizable()
-            // عشان تتغير بالحجم.
+            VStack(alignment: .leading, spacing: 6) {
+                // تفاصيل نصية للكورس
 
-            .scaledToFill()
-            // تعبّي الإطار بدون فراغات.
-
-            .frame(width: 78, height: 64)
-            // حجم قريب من التصميم.
-
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            // زوايا ناعمة للصورة.
-
-            VStack(alignment: .leading, spacing: 6)
-            // تفاصيل الكورس.
-
-            {
                 Text(course.title)
-                // عنوان الكورس.
-
-                .font(.headline)
-                // بارز.
+                    .font(.headline)
+                // عنوان الكورس
 
                 Text(course.level)
-                // مستوى الكورس.
+                    .font(.caption.weight(.semibold))
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .background(Color(.systemBrown).withAlphaComponent(0.18))
+                    .foregroundStyle(.brown)
+                    .clipShape(Capsule())
+                // شارة المستوى
 
-                .font(.caption.weight(.semibold))
-                // أصغر ومميز.
+                HStack(spacing: 10) {
+                    // صف للمدة والتاريخ
 
-                .padding(.vertical, 4)
-                // حواف داخلية.
-
-                .padding(.horizontal, 8)
-                // حواف داخلية.
-
-                .background(Color(.systemBrown).opacity(0.18))
-                // خلفية خفيفة للـ badge.
-
-                .foregroundStyle(.brown)
-                // لون نص الـ badge.
-
-                .clipShape(Capsule())
-                // شكل كبسولة مثل التصميم.
-
-                HStack(spacing: 10)
-                // سطر المدة والتاريخ.
-
-                {
                     Label(course.durationText, systemImage: "hourglass")
-                    // مدة مع أيقونة.
+                    // مدة الكورس مع أيقونة
 
                     Label(course.dateText, systemImage: "calendar")
-                    // تاريخ مع أيقونة.
+                    // تاريخ الكورس مع أيقونة
                 }
                 .font(.caption)
-                // حجم صغير مثل التصميم.
+                // حجم خط صغير
 
                 .foregroundStyle(Color(.secondaryLabel))
-                // لون ثانوي مناسب.
+                // لون ثانوي للنصوص
             }
 
             Spacer()
-            // يدفع المحتوى للبداية.
+            // دفع المحتوى لليسار
         }
         .padding(12)
-        // حواف داخل الكارد.
+        // حواف داخلية للكارد
 
         .background(Color(.systemBackground))
-        // خلفية كارد.
+        // خلفية متوافقة مع الثيم
 
         .clipShape(RoundedRectangle(cornerRadius: 14))
-        // زوايا ناعمة.
+        // زوايا ناعمة للكارد
 
-        .overlay
-        // إطار خفيف.
+        .overlay {
+            // إطار خفيف للكارد
 
-        {
             RoundedRectangle(cornerRadius: 14)
-            // نفس شكل الكارد.
-
-            .stroke(Color(.systemGray5), lineWidth: 1)
-            // حدود خفيفة.
+                .strokeBorder(Color(.systemGray5), lineWidth: 1)
+            // حدود خفيفة
         }
     }
+    // نهاية body
 }
-
-// MARK: - Preview
-// معاينة للواجهة داخل Xcode.
-
-#Preview
-// ميزة Preview الحديثة.
-
-{
-    BookingsProfileView()
-    // عرض الشاشة.
-}
+// نهاية BookedCourseCard
 
 #Preview {
+    // معاينة سريعة للشاشة داخل Xcode
+
     BookingsProfileView()
+    // عرض شاشة البروفايل
 }
+
