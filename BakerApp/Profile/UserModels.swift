@@ -3,7 +3,7 @@
 //  BakerApp
 //
 //  Created by Haya almousa on 29/12/2025.
-//
+//تعريف المتغيرات
 
 import Foundation
 // نستورد Foundation عشان Codable و URL وأشياء الشبكات
