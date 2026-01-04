@@ -11,7 +11,7 @@ struct CourseCard: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            AsyncImage(url: URL(string: course.imageURL)){
+            AsyncImage(url: URL(string: course.image_url)){
                 image in image.resizable()
                     .aspectRatio(contentMode:.fill)
             } placeholder: {
@@ -75,6 +75,6 @@ struct CourseCard: View {
         level: .intermediate,
         duration: "2h",
         date: "19 Feb - 4:00",
-        imageURL: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&h=400"
+        image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&h=400"
     ))
 }

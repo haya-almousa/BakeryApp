@@ -32,5 +32,5 @@ struct Course: Identifiable, Codable {
     let level: CourseLevel
     let duration: String
     let date: String
-    let imageURL: String
+    let image_url: String
 }

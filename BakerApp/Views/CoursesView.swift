@@ -11,7 +11,9 @@ struct CoursesView: View {
     @State private var selectedTab: Tab = .courses
     @State private var searchText = ""
     
-    // mock data
+    @StateObject var viewModel = CoursesViewModel()
+    
+    /** mock data
     let courses: [Course] = [
         Course(id: UUID(), title: "Babka Dough", level: .intermediate, duration: "2h", date: "19 Feb - 4:00", imageURL: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&h=400"),
         Course(id: UUID(), title: "Sourdough Basics", level: .beginner, duration: "3h", date: "20 Feb - 10:00", imageURL: "https://images.unsplash.com/photo-1534620808146-d33bb39128b2?q=80&w=400"),
@@ -21,13 +23,13 @@ struct CoursesView: View {
         Course(id: UUID(), title: "Gluten-Free Loaves", level: .beginner, duration: "3h", date: "24 Feb - 15:00", imageURL: "https://images.unsplash.com/photo-1544681280-d25a782adc9b?q=80&w=400"),
         Course(id: UUID(), title: "Ciabatta Techniques", level: .intermediate, duration: "3h", date: "25 Feb - 10:00", imageURL: "https://images.unsplash.com/photo-1534620808146-d33bb39128b2?q=80&w=400")
     ]
-    
+    **/
     
     var filteredCourses: [Course] {
         if searchText.isEmpty {
-            return courses
+            return viewModel.courses
         } else {
-            return courses.filter { course in
+            return viewModel.courses.filter { course in
                 course.title.lowercased().contains(searchText.lowercased())
             }
         }
@@ -68,6 +70,9 @@ struct CoursesView: View {
                     .navigationTitle("Courses")
                     .navigationBarTitleDisplayMode(.inline)
                     .background(Color(UIColor.systemGray6))
+                    .onAppear {
+                            viewModel.fetchCourses()
+                        }
                 }
             } else {
                 

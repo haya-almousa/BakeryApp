@@ -34,7 +34,7 @@ struct DetailsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     // Top image
-                    AsyncImage(url: URL(string: course.imageURL)) { image in
+                    AsyncImage(url: URL(string: course.image_url)) { image in
                         image
                             .resizable()
                             .scaledToFill()
@@ -309,7 +309,7 @@ private struct SuccessCard: View {
             level: .intermediate,
             duration: "2h",
             date: "15 Dec - 4:00 pm",
-            imageURL: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&h=800"
+            image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&h=800"
         ))
     }
 }
