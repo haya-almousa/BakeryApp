@@ -67,7 +67,7 @@ struct SignInView: View {
                         Button {
                             viewModel.isPasswordVisible.toggle()
                         } label: {
-                            Image(systemName: viewModel.isPasswordVisible ? "eye.slash" : "eye")
+                            Image(systemName: viewModel.isPasswordVisible ? "eye" : "eye.slash")
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -115,4 +115,8 @@ struct SignInView: View {
         }
         .interactiveDismissDisabled(viewModel.isLoading)
     }
+}
+
+#Preview {
+    SignInView()
 }
