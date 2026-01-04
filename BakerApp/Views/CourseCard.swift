@@ -68,13 +68,3 @@ struct CourseCard: View {
     }
 }
 
-#Preview {
-    CourseCard(course: Course(
-        id: UUID(),
-        title: "Babka Dough",
-        level: .intermediate,
-        duration: "2h",
-        date: "19 Feb - 4:00",
-        image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&h=400"
-    ))
-}

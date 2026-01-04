@@ -10,14 +10,20 @@ import SwiftUI
 struct BakeView: View {
     @State private var searchText = ""
     @State private var selectedTab: Tab = .bake
- 
-    let courses: [Course] = [
-        Course(id: UUID(), title: "Babka Dough", level: .intermediate, duration: "2h", date: "19 Feb - 4:00", image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&h=400"),
-        Course(id: UUID(), title: "Cinnamon rolls", level: .beginner, duration: "2h", date: "19 Feb - 4:00", image_url: "https://images.unsplash.com/photo-1534620808146-d33bb39128b2?q=80&w=400"),
-        Course(id: UUID(), title: "Japanese bread", level: .advanced, duration: "4h", date: "21 Feb - 09:00", image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400"),
-        Course(id: UUID(), title: "Banana bread", level: .beginner, duration: "2h", date: "22 Feb - 14:00", image_url: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?q=80&w=400")
-    ]
-   
+    @StateObject private var viewModel = CoursesViewModel()
+    
+    // تصفية حسب البحث
+    private var filteredCourses: [Course] {
+        let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return viewModel.courses }
+        return viewModel.courses.filter { course in
+            course.title.localizedCaseInsensitiveContains(q)
+            || course.level.rawValue.localizedCaseInsensitiveContains(q)
+            || course.duration.localizedCaseInsensitiveContains(q)
+            || course.date.localizedCaseInsensitiveContains(q)
+        }
+    }
+    
     var body: some View {
         ZStack {
             if selectedTab == .bake {
@@ -31,6 +37,8 @@ struct BakeView: View {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(.gray)
                             TextField("Search", text: $searchText)
+                                .textInputAutocapitalization(.never)
+                                .disableAutocorrection(true)
                         }
                         .padding(8)
                         .background(.gray.opacity(0.1))
@@ -38,39 +46,90 @@ struct BakeView: View {
                         .padding(.horizontal)
                         .padding(.vertical, 8)
                         
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 16) {
-                                // Upcoming
-                                Text("Upcoming")
-                                    .font(.headline)
-                                    .padding(.horizontal)
-                                
-                                UpcomingCard()
-                                    .padding(.horizontal)
-                                
-                                // Popular courses
-                                Text("Popular courses")
-                                    .font(.headline)
-                                    .padding(.horizontal)
-                                
-                                LazyVStack(spacing: 8) {
-                                    ForEach(courses) { course in
-                                        NavigationLink {
-                                            DetailsView(course: course)
-                                        } label: {
-                                            CourseCard(course: course)
-                                        }
-                                        .buttonStyle(.plain) // يحافظ على شكل الكارد بدون تلوين الرابط
+                        // حالات التحميل/الخطأ/القائمة
+                        Group {
+                            if viewModel.isLoading {
+                                VStack(spacing: 12) {
+                                    ProgressView()
+                                    Text("Loading courses…")
+                                        .foregroundColor(.secondary)
+                                        .font(.callout)
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            } else if let error = viewModel.errorMessage {
+                                VStack(spacing: 12) {
+                                    Image(systemName: "exclamationmark.triangle")
+                                        .font(.system(size: 28, weight: .semibold))
+                                        .foregroundColor(.orange)
+                                    Text(error)
+                                        .multilineTextAlignment(.center)
+                                        .foregroundColor(.secondary)
+                                    Button {
+                                        viewModel.fetchCourses()
+                                    } label: {
+                                        Text("Try again")
+                                            .font(.callout.weight(.semibold))
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(Color.brown.opacity(0.1))
+                                            .foregroundColor(.brown)
+                                            .clipShape(Capsule())
                                     }
                                 }
-                                .padding(.horizontal)
-                                .padding(.bottom, 100) // مساحة للتاب بار
+                                .padding(.horizontal, 24)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            } else {
+                                ScrollView {
+                                    VStack(alignment: .leading, spacing: 16) {
+                                        // Upcoming
+                                        Text("Upcoming")
+                                            .font(.headline)
+                                            .padding(.horizontal)
+                                        
+                                        UpcomingCard()
+                                            .padding(.horizontal)
+                                        
+                                        // Popular courses
+                                        Text("Popular courses")
+                                            .font(.headline)
+                                            .padding(.horizontal)
+                                        
+                                        if filteredCourses.isEmpty {
+                                            Text("No courses match your search.")
+                                                .font(.callout)
+                                                .foregroundColor(.secondary)
+                                                .padding(.horizontal)
+                                                .padding(.top, 8)
+                                        } else {
+                                            LazyVStack(spacing: 8) {
+                                                ForEach(filteredCourses) { course in
+                                                    NavigationLink {
+                                                        DetailsView(course: course)
+                                                    } label: {
+                                                        CourseCard(course: course)
+                                                    }
+                                                    .buttonStyle(.plain)
+                                                }
+                                            }
+                                            .padding(.horizontal)
+                                        }
+                                        
+                                        Spacer(minLength: 0)
+                                            .frame(height: 100) // مساحة للتاب بار
+                                    }
+                                }
                             }
                         }
                     }
                     .navigationTitle("Home Bakery")
                     .navigationBarTitleDisplayMode(.inline)
                     .background(Color(UIColor.systemGray6))
+                    .onAppear {
+                        // استدعِ مرة واحدة فقط
+                        if viewModel.courses.isEmpty && !viewModel.isLoading {
+                            viewModel.fetchCourses()
+                        }
+                    }
                 }
             } else {
                 Color(UIColor.systemGray6)

@@ -16,9 +16,9 @@ struct CourseRecord: Codable {
 }
 
 struct CourseFields: Codable {
-    let title: String
-    let level: String
-    let duration: String
-    let date: String
-    let image_url: String
+    let title: String?
+    let level: String?
+    let duration: String?
+    let date: String?
+    let image_url: String?
 }
