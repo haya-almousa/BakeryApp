@@ -27,7 +27,7 @@ struct DetailsView: View {
     
     // Check local booking state against API data
     private var isBooked: Bool {
-        return bookingVM.bookingOfUser(email: currentUserEmail) != nil
+        return bookingVM.bookingOfUser(id: currentUserEmail) != nil
     }
     
     // Chef ViewModel
@@ -330,7 +330,7 @@ struct DetailsView: View {
     }
     
     private func performCancellation() {
-        guard let myBooking = bookingVM.bookingOfUser(email: currentUserEmail) else { return }
+        guard let myBooking = bookingVM.bookingOfUser(id: currentUserEmail) else { return }
         bookingVM.cancel(bookingRecordId: myBooking.id)
     }
     

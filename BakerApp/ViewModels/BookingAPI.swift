@@ -66,7 +66,7 @@ final class BookingAPI {
             // 3. We set a default 'status' of "Pending"
             let payload = CreateBookingRequest(
                 fields: .init(
-                    course_id: courseRecordId,
+                    courseid: courseRecordId,
                     user_id: userEmail,
                     status: "Pending"
                 )
@@ -97,7 +97,7 @@ final class BookingAPI {
         // NEW FORMULA: Since it's a text field, we can just check equality or search
         
         // Try this simple formula for text fields:
-        let formula = "{course_id} = '\(courseRecordId)'"
+        let formula = "{courseid} = '\(courseRecordId)'"
         
         let query: [URLQueryItem] = [
             URLQueryItem(name: "filterByFormula", value: formula)

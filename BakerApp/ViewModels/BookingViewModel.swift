@@ -76,8 +76,8 @@ final class BookingViewModel: ObservableObject {
     }
     
     // مساعد لإيجاد حجز المستخدم الحالي (حسب الإيميل)
-    func bookingOfUser(email: String) -> BookingRecord? {
-        // 👇 Change "user_email" to "user_id" here:
-        bookings.first { $0.fields.user_id?.lowercased() == email.lowercased() }
+    func bookingOfUser(id: String) -> BookingRecord? {
+      
+        bookings.first { $0.fields.user_id?.lowercased() == id.lowercased() }
     }
 }
