@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+private let bookingDidChangeNotification = Notification.Name("BookingDidChange")
+
 struct BookingsProfileView: View {
     // شاشة تعرض بروفايل المستخدم مع قائمة حجوزاته
     
@@ -32,6 +34,12 @@ struct BookingsProfileView: View {
                 }
             }
             .refreshable {
+                if let email = currentUserEmail, !email.isEmpty {
+                    viewModel.load(email: email)
+                }
+            }
+            // استماع لأي إشعار حجز جديد/إلغاء صادر من شاشات أخرى
+            .onReceive(NotificationCenter.default.publisher(for: bookingDidChangeNotification)) { _ in
                 if let email = currentUserEmail, !email.isEmpty {
                     viewModel.load(email: email)
                 }
