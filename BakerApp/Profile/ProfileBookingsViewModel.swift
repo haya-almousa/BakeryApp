@@ -49,12 +49,14 @@ final class ProfileBookingsViewModel: ObservableObject {
         email = userEmail
         
         do {
-            // 1) اجلب user record id + الاسم
+            // 1) احصل على record id + الاسم للمستخدم عبر الإيميل
             let (userRecordId, userName) = try await fetchUserRecordIdAndName(byEmail: userEmail)
             self.name = userName ?? ""
             
-            // 2) اجلب حجوزات هذا المستخدم
-            let bookings = try await fetchBookings(byUserRecordId: userRecordId)
+            // 2) اجلب حجوزات هذا المستخدم مغطية الحالتين:
+            //    - user_id = recId
+            //    - user_id = email (مع lowercase)
+            let bookings = try await fetchBookings(email: userEmail, userRecordId: userRecordId)
             
             // استخرج course IDs وتخلّص من القيم الفارغة والمكررة
             let courseIds = Array(Set(
@@ -92,6 +94,8 @@ final class ProfileBookingsViewModel: ObservableObject {
     }
     
     // MARK: - Individual fetches
+    
+    // ترجع (record id, name) للمستخدم عبر الإيميل
     private func fetchUserRecordIdAndName(byEmail email: String) async throws -> (id: String, name: String?) {
         let lower = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let formula = "LOWER({email})='\(lower)'"
@@ -106,13 +110,23 @@ final class ProfileBookingsViewModel: ObservableObject {
         }
         let decoded = try JSONDecoder().decode(AirtableListResponse<UserFields>.self, from: data)
         guard let record = decoded.records.first else {
-            throw NSError(domain: "UserNotFound", code: 404)
+            // إذا ما وجدنا المستخدم، نرجع id فارغ ونكمل فلترة الحجوزات بالإيميل فقط
+            return ("", nil)
         }
         return (record.id, record.fields.name)
     }
     
-    private func fetchBookings(byUserRecordId id: String) async throws -> [AirtableRecord<BookingProfileFields>] {
-        let formula = "{user_id}='\(id)'"
+    // تبني فلترة تغطي الحالتين: user_id = recId أو user_id = email (lowercased)
+    private func fetchBookings(email: String, userRecordId: String) async throws -> [AirtableRecord<BookingProfileFields>] {
+        let lower = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let formula: String
+        if userRecordId.isEmpty {
+            // لو ما قدرنا نجيب recId، فلترة بالإيميل فقط
+            formula = "LOWER({user_id})='\(lower)'"
+        } else {
+            // غطّي الحالتين معًا
+            formula = "OR(LOWER({user_id})='\(lower)', {user_id}='\(userRecordId)')"
+        }
         let query = [URLQueryItem(name: "filterByFormula", value: formula)]
         let request = try makeRequest(path: "booking", queryItems: query)
         let (data, response) = try await URLSession.shared.data(for: request)

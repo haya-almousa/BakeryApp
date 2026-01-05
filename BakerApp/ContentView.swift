@@ -19,7 +19,8 @@ struct ContentView: View {
                 case .courses:
                     CoursesView()
                 case .profile:
-                    ProfileView()
+                    // عرض شاشة البروفايل التي تحتوي على قائمة الحجوزات
+                    BookingsProfileView()
                 }
             }
 

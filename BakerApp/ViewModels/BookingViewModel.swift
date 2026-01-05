@@ -52,6 +52,8 @@ final class BookingViewModel: ObservableObject {
                 // حدّث القائمة
                 await fetch()
                 isPerformingAction = false
+                // أبلغ الشاشات الأخرى (مثل البروفايل) للتحديث
+                NotificationCenter.default.post(name: Notification.Name("BookingDidChange"), object: nil)
             } catch {
                 isPerformingAction = false
                 errorMessage = (error as? LocalizedError)?.errorDescription ?? "Failed to create booking."
@@ -68,6 +70,8 @@ final class BookingViewModel: ObservableObject {
                 // حدّث القائمة
                 await fetch()
                 isPerformingAction = false
+                // أبلغ الشاشات الأخرى (مثل البروفايل) للتحديث
+                NotificationCenter.default.post(name: Notification.Name("BookingDidChange"), object: nil)
             } catch {
                 isPerformingAction = false
                 errorMessage = (error as? LocalizedError)?.errorDescription ?? "Failed to cancel booking."
@@ -75,9 +79,9 @@ final class BookingViewModel: ObservableObject {
         }
     }
     
-    // مساعد لإيجاد حجز المستخدم الحالي (حسب الإيميل)
+    // مساعد لإيجاد حجز المستخدم الحالي (نقارنه بالإيميل لأن user_id = email)
     func bookingOfUser(id: String) -> BookingRecord? {
-      
         bookings.first { $0.fields.user_id?.lowercased() == id.lowercased() }
     }
 }
+

@@ -19,7 +19,7 @@ struct DetailsView: View {
     @StateObject private var bookingVM: BookingViewModel
     
     // Retrieve the logged-in user's email.
-    @AppStorage("userEmail") private var currentUserEmail: String = "paris@hunt.com"
+    @AppStorage("currentUserEmail") private var currentUserEmail: String = ""
     
     @State private var showBookedAlert = false
     @State private var showSuccessCard = false
