@@ -30,7 +30,17 @@ struct Course: Identifiable, Codable {
     let id: UUID
     let title: String
     let level: CourseLevel
+    // نصوص للواجهة (ستُشتق لاحقاً من start/end)
     let duration: String
     let date: String
     let image_url: String
+    
+    // حقول مضافة من الـ API
+    let description: String
+    let locationName: String
+    let latitude: Double?
+    let longitude: Double?
+    let chefId: String?
+    let startDate: Date?
+    let endDate: Date?
 }

@@ -70,13 +70,25 @@ class CoursesViewModel: ObservableObject {
                 DispatchQueue.main.async {
                     self.courses = decodedResponse.records.map { record in
                         let f = record.fields
+                        let lvl = Self.normalizeLevel(f.level)
+                        let start = Self.date(fromUnix: f.start_date)
+                        let end = Self.date(fromUnix: f.end_date)
+                        let durationText = Self.durationText(from: start, to: end) ?? (f.duration ?? "—")
+                        let dateText = Self.dateText(from: start) ?? (f.date ?? "—")
                         return Course(
                             id: UUID(),
                             title: f.title ?? "Untitled",
-                            level: CourseLevel(rawValue: (f.level ?? "Beginner")) ?? .beginner,
-                            duration: f.duration ?? "—",
-                            date: f.date ?? "—",
-                            image_url: f.image_url ?? ""
+                            level: lvl,
+                            duration: durationText,
+                            date: dateText,
+                            image_url: f.image_url ?? "",
+                            description: f.description ?? "",
+                            locationName: f.location_name ?? "",
+                            latitude: f.location_latitude,
+                            longitude: f.location_longitude,
+                            chefId: f.chef_id,
+                            startDate: start,
+                            endDate: end
                         )
                     }
                     self.isLoading = false
@@ -154,13 +166,25 @@ class CoursesViewModel: ObservableObject {
             do {
                 if let singleRecord = try? JSONDecoder().decode(CourseRecord.self, from: data) {
                     let f = singleRecord.fields
+                    let lvl = Self.normalizeLevel(f.level)
+                    let start = Self.date(fromUnix: f.start_date)
+                    let end = Self.date(fromUnix: f.end_date)
+                    let durationText = Self.durationText(from: start, to: end) ?? (f.duration ?? "—")
+                    let dateText = Self.dateText(from: start) ?? (f.date ?? "—")
                     let course = Course(
                         id: UUID(),
                         title: f.title ?? "Untitled",
-                        level: CourseLevel(rawValue: (f.level ?? "Beginner")) ?? .beginner,
-                        duration: f.duration ?? "—",
-                        date: f.date ?? "—",
-                        image_url: f.image_url ?? ""
+                        level: lvl,
+                        duration: durationText,
+                        date: dateText,
+                        image_url: f.image_url ?? "",
+                        description: f.description ?? "",
+                        locationName: f.location_name ?? "",
+                        latitude: f.location_latitude,
+                        longitude: f.location_longitude,
+                        chefId: f.chef_id,
+                        startDate: start,
+                        endDate: end
                     )
                     DispatchQueue.main.async {
                         self.selectedCourse = course
@@ -172,13 +196,25 @@ class CoursesViewModel: ObservableObject {
                     let first = decodedResponse.records.first
                     let course = first.map { record in
                         let f = record.fields
+                        let lvl = Self.normalizeLevel(f.level)
+                        let start = Self.date(fromUnix: f.start_date)
+                        let end = Self.date(fromUnix: f.end_date)
+                        let durationText = Self.durationText(from: start, to: end) ?? (f.duration ?? "—")
+                        let dateText = Self.dateText(from: start) ?? (f.date ?? "—")
                         return Course(
                             id: UUID(),
                             title: f.title ?? "Untitled",
-                            level: CourseLevel(rawValue: (f.level ?? "Beginner")) ?? .beginner,
-                            duration: f.duration ?? "—",
-                            date: f.date ?? "—",
-                            image_url: f.image_url ?? ""
+                            level: lvl,
+                            duration: durationText,
+                            date: dateText,
+                            image_url: f.image_url ?? "",
+                            description: f.description ?? "",
+                            locationName: f.location_name ?? "",
+                            latitude: f.location_latitude,
+                            longitude: f.location_longitude,
+                            chefId: f.chef_id,
+                            startDate: start,
+                            endDate: end
                         )
                     }
                     DispatchQueue.main.async {
@@ -200,5 +236,47 @@ class CoursesViewModel: ObservableObject {
                 }
             }
         }.resume()
+    }
+}
+
+private extension CoursesViewModel {
+    static func normalizeLevel(_ level: String?) -> CourseLevel {
+        guard let level else { return .beginner }
+        let lower = level.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch lower {
+        case "beginner": return .beginner
+        case "intermediate": return .intermediate
+        case "advanced", "advance": return .advanced
+        default: return .beginner
+        }
+    }
+    
+    static func date(fromUnix ts: Double?) -> Date? {
+        guard let ts else { return nil }
+        // Airtable أرسلت بالثواني
+        return Date(timeIntervalSince1970: ts)
+    }
+    
+    static func durationText(from start: Date?, to end: Date?) -> String? {
+        guard let start, let end, end > start else { return nil }
+        let seconds = end.timeIntervalSince(start)
+        let totalMinutes = Int(seconds / 60)
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        if hours > 0 && minutes > 0 {
+            return "\(hours)h \(minutes)m"
+        } else if hours > 0 {
+            return "\(hours)h"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+    
+    static func dateText(from start: Date?) -> String? {
+        guard let start else { return nil }
+        let df = DateFormatter()
+        df.locale = Locale.current
+        df.setLocalizedDateFormatFromTemplate("d MMM - h:mm a")
+        return df.string(from: start)
     }
 }

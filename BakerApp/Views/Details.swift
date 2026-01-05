@@ -7,6 +7,7 @@
 
 import SwiftUI
 import MapKit
+import Combine
 
 struct DetailsView: View {
     let course: Course
@@ -14,11 +15,25 @@ struct DetailsView: View {
     @State private var showSuccessCard = false
     @State private var isBooked = false
     @State private var showCancelAlert = false
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var myBookingRecordId: String?
     
+    // جلب اسم الشيف عبر chef_id
+    @StateObject private var chefVM = ChefViewModel()
+
     // MARK: - Map state
-    // Apple Developer Academy (temporary location)
-    private let locationName = "Apple Developer Academy"
-    private let locationCoordinate = CLLocationCoordinate2D(latitude: 24.713551, longitude: 46.675297)
+    private var locationName: String {
+        course.locationName.isEmpty ? "Location" : course.locationName
+    }
+    private var locationCoordinate: CLLocationCoordinate2D {
+        if let lat = course.latitude, let lon = course.longitude {
+            return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        } else {
+            // Fallback: Apple Developer Academy (مؤقت)
+            return CLLocationCoordinate2D(latitude: 24.713551, longitude: 46.675297)
+        }
+    }
     // iOS 17+ Map camera position (replaces MKCoordinateRegion binding)
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -56,14 +71,14 @@ struct DetailsView: View {
                         // About the course
                         VStack(alignment: .leading, spacing: 8) {
                             Text("About the course:")
-                                .font(.headline)
-                            
-                            Text("""
-                            Needless to say, you will learn new techniques, new ingredients, and new recipes when taking a baking class. Not only that, but baking also involves creating food presentations and plating.
-                            """)
-                            .font(.callout)
+                            .font(.headline)
                             .foregroundColor(Color(.label))
-                            .fixedSize(horizontal: false, vertical: true)
+                            
+                            let aboutText = course.description.trimmingCharacters(in: .whitespacesAndNewlines)
+                            Text(aboutText.isEmpty ? "—" : aboutText)
+                                .font(.callout)
+                                .foregroundColor(Color(.label))
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         
                         // Info grid
@@ -72,8 +87,17 @@ struct DetailsView: View {
                                 // Left column
                                 VStack(alignment: .leading, spacing: 12) {
                                     labeledValue(label: "Chef", valueView:
-                                        Text("Ali Boholaiqa")
-                                            .foregroundColor(.primary)
+                                        Group {
+                                            if chefVM.isLoading {
+                                                ProgressView().scaleEffect(0.7)
+                                            } else if let name = chefVM.name, !name.isEmpty {
+                                                Text(name)
+                                                    .foregroundColor(.primary)
+                                            } else {
+                                                Text("—")
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
                                     )
                                     
                                     labeledValue(label: "Level", valueView:
@@ -82,7 +106,7 @@ struct DetailsView: View {
                                             .padding(.vertical, 4)
                                             .padding(.horizontal, 10)
                                             .background(course.level.themeColor)
-                                            .foregroundColor(.brown)
+                                            .foregroundColor(.white) // <-- تغيّر إلى أبيض
                                             .clipShape(Capsule())
                                     )
                                 }
@@ -119,7 +143,7 @@ struct DetailsView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
                     
-                    // MARK: - Map block (temporary Apple Developer Academy)
+                    // MARK: - Map block
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Location")
                             .font(.headline)
@@ -128,7 +152,7 @@ struct DetailsView: View {
                         VStack(spacing: 12) {
                             // New iOS 17 Map API using MapContentBuilder
                             Map(position: $cameraPosition) {
-                                // Single marker for the academy location
+                                // Single marker for the location
                                 Marker(locationName, coordinate: locationCoordinate)
                                     .tint(.brown)
                             }
@@ -138,6 +162,15 @@ struct DetailsView: View {
                                 RoundedRectangle(cornerRadius: 14)
                                     .stroke(Color(.systemGray5), lineWidth: 1)
                             )
+                            .onAppear {
+                                // اضبط الكاميرا بناءً على موقع الدورة
+                                cameraPosition = .region(
+                                    MKCoordinateRegion(
+                                        center: locationCoordinate,
+                                        span: MKCoordinateSpan(latitudeDelta: 0.008, longitudeDelta: 0.008)
+                                    )
+                                )
+                            }
                             
                             Button {
                                 openInMaps(at: locationCoordinate, named: locationName)
@@ -230,14 +263,12 @@ struct DetailsView: View {
         } message: {
             Text("Do you want to cancel your booking")
         }
-        .onAppear {
-            // Ensure initial camera is centered on the location
-            cameraPosition = .region(
-                MKCoordinateRegion(
-                    center: locationCoordinate,
-                    span: MKCoordinateSpan(latitudeDelta: 0.008, longitudeDelta: 0.008)
-                )
-            )
+        .task {
+            await loadMyBookingState()
+            // تحميل اسم الشيف إذا توفر chefId
+            if let chefId = course.chefId, !chefId.isEmpty {
+                await chefVM.load(chefId: chefId)
+            }
         }
         // أزلنا safeAreaInset لأن الزر صار جزء من المحتوى تحت الماب
     }
@@ -262,6 +293,17 @@ struct DetailsView: View {
             MKLaunchOptionsMapCenterKey: NSValue(mkCoordinate: coordinate),
             MKLaunchOptionsMapSpanKey: NSValue(mkCoordinateSpan: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
         ])
+    }
+    
+    // Temporary placeholder to fix build; replace with real logic using BookingViewModel/BookingAPI.
+    private func loadMyBookingState() async {
+        // TODO: Integrate with BookingViewModel once courseRecordId and user email are available.
+        await MainActor.run {
+            self.isBooked = false
+            self.myBookingRecordId = nil
+            self.errorMessage = nil
+            self.isLoading = false
+        }
     }
 }
 
@@ -301,6 +343,61 @@ private struct SuccessCard: View {
     }
 }
 
+// MARK: - Chef API models + VM (محلية داخل هذا الملف)
+private struct ChefFields: Codable {
+    let name: String?
+}
+
+@MainActor
+private final class ChefViewModel: ObservableObject {
+    @Published var name: String?
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
+    
+    func load(chefId: String) async {
+        isLoading = true
+        errorMessage = nil
+        do {
+            // نبني رابط Airtable: base/chef/{recordId}
+            let baseURL = APIConstants.baseURL
+            guard var components = URLComponents(string: baseURL) else {
+                throw APIError.invalidURL
+            }
+            components.path = components.path + "/chef/\(chefId)"
+            guard let url = components.url else {
+                throw APIError.invalidURL
+            }
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(APIConstants.token)", forHTTPHeaderField: "Authorization")
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+            guard (200...299).contains(http.statusCode) else {
+                throw APIError.httpStatus(http.statusCode)
+            }
+            // نفك AirtableRecord<ChefFields>
+            let record = try JSONDecoder().decode(AirtableRecord<ChefFields>.self, from: data)
+            self.name = record.fields.name
+            self.isLoading = false
+        } catch is CancellationError {
+            // تم الإلغاء
+            isLoading = false
+        } catch {
+            isLoading = false
+            // حاول استخدام LocalizedError إن وُجد
+            if let err = error as? LocalizedError, let desc = err.errorDescription {
+                errorMessage = desc
+            } else {
+                errorMessage = "Failed to load chef."
+            }
+            // فشل الجلب → ابقِ الاسم nil ليظهر "—"
+        }
+    }
+}
+
 #Preview {
     NavigationStack {
         DetailsView(course: Course(
@@ -309,7 +406,14 @@ private struct SuccessCard: View {
             level: .intermediate,
             duration: "2h",
             date: "15 Dec - 4:00 pm",
-            image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&h=800"
+            image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&h=800",
+            description: "Create a simple and delicious banana bread recipe in a hands-on session suitable for all ages.",
+            locationName: "Ferriday",
+            latitude: 31.63017,
+            longitude: -91.55456,
+            chefId: "recF8ocLPwiadavlP",
+            startDate: Date(),
+            endDate: Date().addingTimeInterval(7200)
         ))
     }
 }
