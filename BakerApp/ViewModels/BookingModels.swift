@@ -18,7 +18,7 @@ struct BookingFields: Codable {
     // Since our variable names now match the JSON keys exactly,
     // we technically don't need this enum, but we keep it for safety.
     enum CodingKeys: String, CodingKey {
-        case course_id = "course_id"
+        case course_id = "courseid"
         case user_id = "user_id"
         case status = "status"
     }
@@ -29,7 +29,7 @@ struct CreateBookingRequest: Codable {
     let fields: CreateBookingFields
     
     struct CreateBookingFields: Codable {
-        let course_id: String
+        let courseid: String
         let user_id: String
         let status: String
         
