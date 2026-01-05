@@ -10,7 +10,7 @@ final class ProfileBookingsViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
-    @Published var bookedCourses: [BookedCourse] = []
+    @Published var bookedCourses: [Course] = []   // نفس نموذج Bake
     
     // MARK: - API constants
     private let baseURL = APIConstants.baseURL
@@ -56,12 +56,18 @@ final class ProfileBookingsViewModel: ObservableObject {
             // 2) اجلب حجوزات هذا المستخدم مغطية الحالتين:
             //    - user_id = recId
             //    - user_id = email (مع lowercase)
-            let bookings = try await fetchBookings(email: userEmail, userRecordId: userRecordId)
+            let allBookings = try await fetchBookings(email: userEmail, userRecordId: userRecordId)
+            
+            // 2.1) استبعد الحجوزات الملغاة
+            let activeBookings = allBookings.filter { rec in
+                let status = rec.fields.status?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                return status != "cancelled"
+            }
             
             // استخرج course IDs وتخلّص من القيم الفارغة والمكررة
             let courseIds = Array(Set(
-                bookings.compactMap { $0.fields.courseid?.trimmingCharacters(in: .whitespacesAndNewlines) }
-                        .filter { !$0.isEmpty }
+                activeBookings.compactMap { $0.fields.courseid?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
             ))
             
             guard !courseIds.isEmpty else {
@@ -70,18 +76,30 @@ final class ProfileBookingsViewModel: ObservableObject {
             }
             
             // 3) اجلب تفاصيل الكورسات دفعة واحدة
-            let courses = try await fetchCourses(byRecordIds: courseIds)
+            let courseRecords = try await fetchCourses(byRecordIds: courseIds)
             
-            // 4) حوّل النتائج إلى BookedCourse لعرضها
-            let mapped: [BookedCourse] = courses.map { rec in
-                let f = rec.fields
-                return BookedCourse(
-                    id: UUID(),
+            // 4) حوّل النتائج إلى Course بنفس منطق شاشة Bake لضمان تطابق الشكل
+            let mapped: [Course] = courseRecords.map { record in
+                let f = record.fields
+                let lvl = Self.normalizeLevel(f.level)
+                let start = Self.date(fromUnix: f.start_date)
+                let end = Self.date(fromUnix: f.end_date)
+                let durationText = Self.durationText(from: start, to: end) ?? (f.duration ?? "—")
+                let dateText = Self.dateText(from: start) ?? (f.date ?? "—")
+                return Course(
+                    id: record.id,
                     title: f.title ?? "Untitled",
-                    level: f.level ?? "Beginner",
-                    durationText: f.duration ?? "—",
-                    dateText: f.date ?? "—",
-                    imageURL: f.image_url
+                    level: lvl,
+                    duration: durationText,
+                    date: dateText,
+                    image_url: f.image_url ?? "",
+                    description: f.description ?? "",
+                    locationName: f.location_name ?? "",
+                    latitude: f.location_latitude,
+                    longitude: f.location_longitude,
+                    chefId: f.chef_id,
+                    startDate: start,
+                    endDate: end
                 )
             }
             
@@ -110,7 +128,6 @@ final class ProfileBookingsViewModel: ObservableObject {
         }
         let decoded = try JSONDecoder().decode(AirtableListResponse<UserFields>.self, from: data)
         guard let record = decoded.records.first else {
-            // إذا ما وجدنا المستخدم، نرجع id فارغ ونكمل فلترة الحجوزات بالإيميل فقط
             return ("", nil)
         }
         return (record.id, record.fields.name)
@@ -121,10 +138,8 @@ final class ProfileBookingsViewModel: ObservableObject {
         let lower = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let formula: String
         if userRecordId.isEmpty {
-            // لو ما قدرنا نجيب recId، فلترة بالإيميل فقط
             formula = "LOWER({user_id})='\(lower)'"
         } else {
-            // غطّي الحالتين معًا
             formula = "OR(LOWER({user_id})='\(lower)', {user_id}='\(userRecordId)')"
         }
         let query = [URLQueryItem(name: "filterByFormula", value: formula)]
@@ -149,5 +164,47 @@ final class ProfileBookingsViewModel: ObservableObject {
         }
         let decoded = try JSONDecoder().decode(AirtableResponse.self, from: data)
         return decoded.records
+    }
+}
+
+// MARK: - Formatting helpers (مطابقة لـ CoursesViewModel)
+private extension ProfileBookingsViewModel {
+    static func normalizeLevel(_ level: String?) -> CourseLevel {
+        guard let level else { return .beginner }
+        let lower = level.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch lower {
+        case "beginner": return .beginner
+        case "intermediate": return .intermediate
+        case "advanced", "advance": return .advanced
+        default: return .beginner
+        }
+    }
+    
+    static func date(fromUnix ts: Double?) -> Date? {
+        guard let ts else { return nil }
+        return Date(timeIntervalSince1970: ts)
+    }
+    
+    static func durationText(from start: Date?, to end: Date?) -> String? {
+        guard let start, let end, end > start else { return nil }
+        let seconds = end.timeIntervalSince(start)
+        let totalMinutes = Int(seconds / 60)
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        if hours > 0 && minutes > 0 {
+            return "\(hours)h \(minutes)m"
+        } else if hours > 0 {
+            return "\(hours)h"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+    
+    static func dateText(from start: Date?) -> String? {
+        guard let start else { return nil }
+        let df = DateFormatter()
+        df.locale = Locale.current
+        df.setLocalizedDateFormatFromTemplate("d MMM - h:mm a")
+        return df.string(from: start)
     }
 }
