@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// إشعار عام: لو أي شاشة خارج مجلد Profile أنشأت/ألغت حجز، أرسلي هذا الإشعار لتحديث البروفايل تلقائيًا
 private let bookingDidChangeNotification = Notification.Name("BookingDidChange")
 
 struct BookingsProfileView: View {
@@ -28,17 +29,19 @@ struct BookingsProfileView: View {
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
+            // تحميل أولي أو عند تغيّر الإيميل
             .task(id: currentUserEmail) {
                 if let email = currentUserEmail, !email.isEmpty {
                     viewModel.load(email: email)
                 }
             }
+            // سحب للتحديث
             .refreshable {
                 if let email = currentUserEmail, !email.isEmpty {
                     viewModel.load(email: email)
                 }
             }
-            // استماع لأي إشعار حجز جديد/إلغاء صادر من شاشات أخرى
+            // تحديث تلقائي عند إشعار خارجي (مثلاً بعد إنشاء/إلغاء حجز)
             .onReceive(NotificationCenter.default.publisher(for: bookingDidChangeNotification)) { _ in
                 if let email = currentUserEmail, !email.isEmpty {
                     viewModel.load(email: email)

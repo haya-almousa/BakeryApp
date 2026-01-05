@@ -5,26 +5,30 @@ import Combine
 @MainActor
 final class ProfileBookingsViewModel: ObservableObject {
 
+    // MARK: - Published state
     @Published var name: String = ""
     @Published var email: String = ""
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var bookedCourses: [BookedCourse] = []
     
+    // MARK: - API constants
     private let baseURL = APIConstants.baseURL
     private let token = APIConstants.token
     
-    // مطابق للـ JSON (courseid, user_id, status)
+    // شكل حقول جدول booking (مطابق للـ JSON المرسل)
     private struct BookingProfileFields: Codable {
         let courseid: String?
         let user_id: String?
         let status: String?
     }
     
+    // MARK: - Public API
     func load(email userEmail: String) {
         Task { await fetchAll(email: userEmail) }
     }
     
+    // MARK: - Networking helpers
     private func makeRequest(path: String, queryItems: [URLQueryItem] = []) throws -> URLRequest {
         guard var components = URLComponents(string: baseURL) else { throw URLError(.badURL) }
         components.path = components.path + "/" + path
@@ -36,6 +40,7 @@ final class ProfileBookingsViewModel: ObservableObject {
         return req
     }
     
+    // MARK: - Orchestration
     private func fetchAll(email userEmail: String) async {
         isLoading = true
         errorMessage = nil
@@ -43,29 +48,29 @@ final class ProfileBookingsViewModel: ObservableObject {
         name = ""
         email = userEmail
         
-        print("🔵 [Profile] Start load for email=\(userEmail)")
         do {
-            // 1) user record id + name
+            // 1) اجلب user record id + الاسم
             let (userRecordId, userName) = try await fetchUserRecordIdAndName(byEmail: userEmail)
             self.name = userName ?? ""
-            print("🟢 [Profile] userRecordId=\(userRecordId), name=\(self.name)")
             
-            // 2) bookings of this user
+            // 2) اجلب حجوزات هذا المستخدم
             let bookings = try await fetchBookings(byUserRecordId: userRecordId)
-            print("🟢 [Profile] bookings count=\(bookings.count)")
-            let courseIds = Array(Set(bookings.compactMap { $0.fields.courseid }.filter { !$0.isEmpty }))
-            print("🟢 [Profile] courseIds=\(courseIds)")
+            
+            // استخرج course IDs وتخلّص من القيم الفارغة والمكررة
+            let courseIds = Array(Set(
+                bookings.compactMap { $0.fields.courseid?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        .filter { !$0.isEmpty }
+            ))
+            
             guard !courseIds.isEmpty else {
-                self.isLoading = false
-                print("⚪️ [Profile] No courseIds for this user. Done.")
+                isLoading = false
                 return
             }
             
-            // 3) fetch courses by record IDs (batch)
+            // 3) اجلب تفاصيل الكورسات دفعة واحدة
             let courses = try await fetchCourses(byRecordIds: courseIds)
-            print("🟢 [Profile] fetched courses count=\(courses.count)")
             
-            // 4) map to BookedCourse for UI
+            // 4) حوّل النتائج إلى BookedCourse لعرضها
             let mapped: [BookedCourse] = courses.map { rec in
                 let f = rec.fields
                 return BookedCourse(
@@ -77,16 +82,16 @@ final class ProfileBookingsViewModel: ObservableObject {
                     imageURL: f.image_url
                 )
             }
+            
             self.bookedCourses = mapped
             self.isLoading = false
-            print("🟢 [Profile] mapped bookedCourses=\(mapped.count)")
         } catch {
             self.isLoading = false
             self.errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            print("🔴 [Profile] Error: \(self.errorMessage ?? "unknown")")
         }
     }
     
+    // MARK: - Individual fetches
     private func fetchUserRecordIdAndName(byEmail email: String) async throws -> (id: String, name: String?) {
         let lower = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let formula = "LOWER({email})='\(lower)'"
@@ -96,9 +101,6 @@ final class ProfileBookingsViewModel: ObservableObject {
         ]
         let request = try makeRequest(path: "user", queryItems: query)
         let (data, response) = try await URLSession.shared.data(for: request)
-        if let http = response as? HTTPURLResponse {
-            print("🔷 [Profile] fetchUser status=\(http.statusCode)")
-        }
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
@@ -114,9 +116,6 @@ final class ProfileBookingsViewModel: ObservableObject {
         let query = [URLQueryItem(name: "filterByFormula", value: formula)]
         let request = try makeRequest(path: "booking", queryItems: query)
         let (data, response) = try await URLSession.shared.data(for: request)
-        if let http = response as? HTTPURLResponse {
-            print("🔷 [Profile] fetchBookings status=\(http.statusCode)")
-        }
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
@@ -131,9 +130,6 @@ final class ProfileBookingsViewModel: ObservableObject {
         let query = [URLQueryItem(name: "filterByFormula", value: formula)]
         let request = try makeRequest(path: "course", queryItems: query)
         let (data, response) = try await URLSession.shared.data(for: request)
-        if let http = response as? HTTPURLResponse {
-            print("🔷 [Profile] fetchCourses status=\(http.statusCode)")
-        }
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
