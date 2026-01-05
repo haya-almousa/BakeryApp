@@ -104,7 +104,7 @@ struct BakeView: View {
                                             LazyVStack(spacing: 8) {
                                                 ForEach(filteredCourses) { course in
                                                     NavigationLink {
-                                                        DetailsView(course: course)
+                                                        DetailsView(course: course, courseRecordId: course.id )
                                                     } label: {
                                                         CourseCard(course: course)
                                                     }

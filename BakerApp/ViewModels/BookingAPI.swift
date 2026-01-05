@@ -57,33 +57,52 @@ final class BookingAPI {
     }
     
     // POST /booking
-    func createBooking(courseRecordId: String,
-                       userEmail: String,
-                       seats: Int? = 1) async throws -> BookingRecord {
-        let payload = CreateBookingRequest(fields: .init(course: [courseRecordId],
-                                                         user_email: userEmail,
-                                                         seats: seats))
-        let body = try JSONEncoder().encode(payload)
-        let request = try makeRequest(path: "booking", method: "POST", body: body)
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw BookingAPIError.invalidResponse }
-        guard (200...299).contains(http.statusCode) else { throw BookingAPIError.httpStatus(http.statusCode) }
-        do {
-            let record = try JSONDecoder().decode(BookingRecord.self, from: data)
-            return record
-        } catch {
-            throw BookingAPIError.decodingFailed
+        func createBooking(courseRecordId: String,
+                           userEmail: String,
+                           seats: Int? = 1) async throws -> BookingRecord {
+            
+            // 1. We removed the brackets [] around courseRecordId
+            // 2. We map 'userEmail' to 'user_id'
+            // 3. We set a default 'status' of "Pending"
+            let payload = CreateBookingRequest(
+                fields: .init(
+                    course_id: courseRecordId,
+                    user_id: userEmail,
+                    status: "Pending"
+                )
+            )
+            
+            let body = try JSONEncoder().encode(payload)
+            let request = try makeRequest(path: "booking", method: "POST", body: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let http = response as? HTTPURLResponse else { throw BookingAPIError.invalidResponse }
+            // Print error body if it fails, to help debugging
+            if !(200...299).contains(http.statusCode) {
+                let errorText = String(data: data, encoding: .utf8) ?? "No error details"
+                print("❌ API Error \(http.statusCode): \(errorText)")
+                throw BookingAPIError.httpStatus(http.statusCode)
+            }
+            
+            do {
+                let record = try JSONDecoder().decode(BookingRecord.self, from: data)
+                return record
+            } catch {
+                throw BookingAPIError.decodingFailed
+            }
         }
-    }
-    
     // GET /course/:id/booking  ← نحققها بفلترة على جدول booking
     func fetchBookings(forCourseRecordId courseRecordId: String) async throws -> [BookingRecord] {
-        // filterByFormula: يتحقق أن course يحتوي على record ID المطلوب
-        // بما أن course هو Link field (array)، نستخدم ARRAYJOIN لتحويله نص ثم FIND
-        let formula = "FIND('\(courseRecordId)', ARRAYJOIN({course}))"
+        // OLD FORMULA: "FIND('\(courseRecordId)', ARRAYJOIN({course}))"
+        // NEW FORMULA: Since it's a text field, we can just check equality or search
+        
+        // Try this simple formula for text fields:
+        let formula = "{course_id} = '\(courseRecordId)'"
+        
         let query: [URLQueryItem] = [
             URLQueryItem(name: "filterByFormula", value: formula)
         ]
+        
         let request = try makeRequest(path: "booking", queryItems: query)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw BookingAPIError.invalidResponse }
