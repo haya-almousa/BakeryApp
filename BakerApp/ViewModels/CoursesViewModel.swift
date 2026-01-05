@@ -76,7 +76,7 @@ class CoursesViewModel: ObservableObject {
                         let durationText = Self.durationText(from: start, to: end) ?? (f.duration ?? "—")
                         let dateText = Self.dateText(from: start) ?? (f.date ?? "—")
                         return Course(
-                            id: UUID(),
+                            id: record.id,
                             title: f.title ?? "Untitled",
                             level: lvl,
                             duration: durationText,
@@ -172,7 +172,7 @@ class CoursesViewModel: ObservableObject {
                     let durationText = Self.durationText(from: start, to: end) ?? (f.duration ?? "—")
                     let dateText = Self.dateText(from: start) ?? (f.date ?? "—")
                     let course = Course(
-                        id: UUID(),
+                        id: singleRecord.id,
                         title: f.title ?? "Untitled",
                         level: lvl,
                         duration: durationText,
@@ -202,7 +202,7 @@ class CoursesViewModel: ObservableObject {
                         let durationText = Self.durationText(from: start, to: end) ?? (f.duration ?? "—")
                         let dateText = Self.dateText(from: start) ?? (f.date ?? "—")
                         return Course(
-                            id: UUID(),
+                            id: record.id,
                             title: f.title ?? "Untitled",
                             level: lvl,
                             duration: durationText,

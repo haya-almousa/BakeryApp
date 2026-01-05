@@ -11,30 +11,48 @@ import Combine
 
 struct DetailsView: View {
     let course: Course
+    // We need the Airtable Record ID (String) for the API.
+    let courseRecordId: String
+    
+    // MARK: - Booking Logic
+    // Initialize the ViewModel with the specific course ID
+    @StateObject private var bookingVM: BookingViewModel
+    
+    // Retrieve the logged-in user's email.
+    @AppStorage("userEmail") private var currentUserEmail: String = "paris@hunt.com"
+    
     @State private var showBookedAlert = false
     @State private var showSuccessCard = false
-    @State private var isBooked = false
     @State private var showCancelAlert = false
-    @State private var isLoading = false
-    @State private var errorMessage: String?
-    @State private var myBookingRecordId: String?
     
-    // جلب اسم الشيف عبر chef_id
+    // Check local booking state against API data
+    private var isBooked: Bool {
+        return bookingVM.bookingOfUser(email: currentUserEmail) != nil
+    }
+    
+    // Chef ViewModel
     @StateObject private var chefVM = ChefViewModel()
+
+    init(course: Course, courseRecordId: String) {
+        self.course = course
+        self.courseRecordId = courseRecordId
+        // Initialize the StateObject with the course ID manually
+        _bookingVM = StateObject(wrappedValue: BookingViewModel(courseRecordId: courseRecordId))
+    }
 
     // MARK: - Map state
     private var locationName: String {
         course.locationName.isEmpty ? "Location" : course.locationName
     }
+    
     private var locationCoordinate: CLLocationCoordinate2D {
         if let lat = course.latitude, let lon = course.longitude {
             return CLLocationCoordinate2D(latitude: lat, longitude: lon)
         } else {
-            // Fallback: Apple Developer Academy (مؤقت)
             return CLLocationCoordinate2D(latitude: 24.713551, longitude: 46.675297)
         }
     }
-    // iOS 17+ Map camera position (replaces MKCoordinateRegion binding)
+    
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 24.713551, longitude: 46.675297),
@@ -106,7 +124,7 @@ struct DetailsView: View {
                                             .padding(.vertical, 4)
                                             .padding(.horizontal, 10)
                                             .background(course.level.themeColor)
-                                            .foregroundColor(.white) // <-- تغيّر إلى أبيض
+                                            .foregroundColor(.white)
                                             .clipShape(Capsule())
                                     )
                                 }
@@ -150,9 +168,7 @@ struct DetailsView: View {
                             .padding(.horizontal, 16)
                         
                         VStack(spacing: 12) {
-                            // New iOS 17 Map API using MapContentBuilder
                             Map(position: $cameraPosition) {
-                                // Single marker for the location
                                 Marker(locationName, coordinate: locationCoordinate)
                                     .tint(.brown)
                             }
@@ -163,7 +179,6 @@ struct DetailsView: View {
                                     .stroke(Color(.systemGray5), lineWidth: 1)
                             )
                             .onAppear {
-                                // اضبط الكاميرا بناءً على موقع الدورة
                                 cameraPosition = .region(
                                     MKCoordinateRegion(
                                         center: locationCoordinate,
@@ -188,41 +203,60 @@ struct DetailsView: View {
                         }
                         .padding(.horizontal, 16)
                         
-                        // زر الحجز أسفل الماب مباشرة (جزء من المحتوى)
+                        // Error Message Display
+                        if let error = bookingVM.errorMessage {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .padding(.horizontal, 16)
+                        }
+
+                        // MARK: - Booking Buttons
                         VStack {
-                            if isBooked {
+                            if bookingVM.isLoading && !bookingVM.isPerformingAction {
+                                ProgressView().padding()
+                            } else if isBooked {
+                                // CANCEL BUTTON
                                 Button {
                                     showCancelAlert = true
                                 } label: {
-                                    Text("Cancel booking")
-                                        .font(.headline)
-                                        .foregroundColor(.red)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 14)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 14)
-                                                .fill(Color(.systemBackground))
-                                        )
-                                }
-                                .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 4)
-                            } else {
-                                Button {
-                                    isBooked = true
-                                    showSuccessCard = true
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                        withAnimation(.easeInOut) {
-                                            showSuccessCard = false
+                                    HStack {
+                                        if bookingVM.isPerformingAction {
+                                            ProgressView().tint(.red)
                                         }
+                                        Text("Cancel booking")
+                                            .font(.headline)
+                                            .foregroundColor(.red)
                                     }
-                                } label: {
-                                    Text("Book a space")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 16)
-                                        .background(Color.brown)
-                                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .fill(Color(.systemBackground))
+                                    )
                                 }
+                                .disabled(bookingVM.isPerformingAction)
+                                .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 4)
+                                
+                            } else {
+                                // BOOK BUTTON
+                                Button {
+                                    performBooking()
+                                } label: {
+                                    HStack {
+                                        if bookingVM.isPerformingAction {
+                                            ProgressView().tint(.white).padding(.trailing, 5)
+                                        }
+                                        Text("Book a space")
+                                            .font(.headline)
+                                            .foregroundColor(.white)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(Color.brown)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                                }
+                                .disabled(bookingVM.isPerformingAction)
                                 .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
                             }
                         }
@@ -232,24 +266,25 @@ struct DetailsView: View {
                     }
                     .padding(.top, 4)
                     
-                    // مسافة عامة إضافية قبل التاب بار
                     Spacer(minLength: 32)
                 }
             }
             
-            // Overlay: كارد النجاح الصغير في المنتصف
+            // Success Overlay
             if showSuccessCard {
                 SuccessCard()
-                    .transition(.scale .combined(with: .opacity))
+                    .transition(.scale.combined(with: .opacity))
                     .onTapGesture {
                         withAnimation(.easeInOut) {
                             showSuccessCard = false
                         }
                     }
+                    .zIndex(100)
             }
         }
         .navigationTitle(course.title)
         .navigationBarTitleDisplayMode(.inline)
+        // MARK: - Alerts
         .alert("Booked!", isPresented: $showBookedAlert) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -258,19 +293,45 @@ struct DetailsView: View {
         .alert("Cancel booking?", isPresented: $showCancelAlert) {
             Button("No", role: .cancel) { }
             Button("Yes", role: .destructive) {
-                isBooked = false
+                performCancellation()
             }
         } message: {
-            Text("Do you want to cancel your booking")
+            Text("Do you want to cancel your booking?")
         }
+        // MARK: - View Tasks (Load Data)
         .task {
-            await loadMyBookingState()
-            // تحميل اسم الشيف إذا توفر chefId
+            await bookingVM.fetch()
             if let chefId = course.chefId, !chefId.isEmpty {
                 await chefVM.load(chefId: chefId)
             }
         }
-        // أزلنا safeAreaInset لأن الزر صار جزء من المحتوى تحت الماب
+        // MARK: - State Changes (Correctly placed inside body)
+        .onChange(of: bookingVM.lastCreatedBooking?.id) { newValue in
+            if newValue != nil {
+                showSuccessCard = true
+                showBookedAlert = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation(.easeInOut) {
+                        showSuccessCard = false
+                    }
+                }
+            }
+        }
+    } // End of body
+    
+    // MARK: - Action Functions
+    
+    private func performBooking() {
+        guard !currentUserEmail.isEmpty else {
+            print("❌ User email is missing")
+            return
+        }
+        bookingVM.book(userEmail: currentUserEmail)
+    }
+    
+    private func performCancellation() {
+        guard let myBooking = bookingVM.bookingOfUser(email: currentUserEmail) else { return }
+        bookingVM.cancel(bookingRecordId: myBooking.id)
     }
     
     @ViewBuilder
@@ -284,7 +345,6 @@ struct DetailsView: View {
         }
     }
     
-    // Open Apple Maps to this coordinate
     private func openInMaps(at coordinate: CLLocationCoordinate2D, named name: String) {
         let placemark = MKPlacemark(coordinate: coordinate)
         let mapItem = MKMapItem(placemark: placemark)
@@ -294,26 +354,9 @@ struct DetailsView: View {
             MKLaunchOptionsMapSpanKey: NSValue(mkCoordinateSpan: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
         ])
     }
-    
-    // Temporary placeholder to fix build; replace with real logic using BookingViewModel/BookingAPI.
-    private func loadMyBookingState() async {
-        // TODO: Integrate with BookingViewModel once courseRecordId and user email are available.
-        await MainActor.run {
-            self.isBooked = false
-            self.myBookingRecordId = nil
-            self.errorMessage = nil
-            self.isLoading = false
-        }
-    }
 }
 
-// Helper for Map annotations
-private struct MapPinItem: Identifiable {
-    let id = UUID()
-    let coordinate: CLLocationCoordinate2D
-}
-
-// الكارد الصغير (مثل الصورة)
+// Helper structs
 private struct SuccessCard: View {
     var body: some View {
         VStack(spacing: 12) {
@@ -325,7 +368,6 @@ private struct SuccessCard: View {
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.brown)
             }
-            
             Text("Successful")
                 .font(.headline)
                 .foregroundColor(.brown)
@@ -343,11 +385,7 @@ private struct SuccessCard: View {
     }
 }
 
-// MARK: - Chef API models + VM (محلية داخل هذا الملف)
-private struct ChefFields: Codable {
-    let name: String?
-}
-
+// Local Chef ViewModel
 @MainActor
 private final class ChefViewModel: ObservableObject {
     @Published var name: String?
@@ -358,62 +396,48 @@ private final class ChefViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         do {
-            // نبني رابط Airtable: base/chef/{recordId}
             let baseURL = APIConstants.baseURL
-            guard var components = URLComponents(string: baseURL) else {
-                throw APIError.invalidURL
-            }
+            guard var components = URLComponents(string: baseURL) else { throw APIError.invalidURL }
             components.path = components.path + "/chef/\(chefId)"
-            guard let url = components.url else {
-                throw APIError.invalidURL
-            }
+            guard let url = components.url else { throw APIError.invalidURL }
             var request = URLRequest(url: url)
             request.httpMethod = "GET"
             request.setValue("Bearer \(APIConstants.token)", forHTTPHeaderField: "Authorization")
             
             let (data, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse else {
-                throw APIError.invalidResponse
-            }
-            guard (200...299).contains(http.statusCode) else {
-                throw APIError.httpStatus(http.statusCode)
-            }
-            // نفك AirtableRecord<ChefFields>
+            guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+            guard (200...299).contains(http.statusCode) else { throw APIError.httpStatus(http.statusCode) }
+            
+            struct ChefFields: Codable { let name: String? }
             let record = try JSONDecoder().decode(AirtableRecord<ChefFields>.self, from: data)
             self.name = record.fields.name
             self.isLoading = false
-        } catch is CancellationError {
-            // تم الإلغاء
-            isLoading = false
         } catch {
-            isLoading = false
-            // حاول استخدام LocalizedError إن وُجد
-            if let err = error as? LocalizedError, let desc = err.errorDescription {
-                errorMessage = desc
-            } else {
-                errorMessage = "Failed to load chef."
-            }
-            // فشل الجلب → ابقِ الاسم nil ليظهر "—"
+            self.isLoading = false
+            self.errorMessage = error.localizedDescription
         }
     }
 }
 
 #Preview {
     NavigationStack {
-        DetailsView(course: Course(
-            id: UUID(),
-            title: "Babka dough",
-            level: .intermediate,
-            duration: "2h",
-            date: "15 Dec - 4:00 pm",
-            image_url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&h=800",
-            description: "Create a simple and delicious banana bread recipe in a hands-on session suitable for all ages.",
-            locationName: "Ferriday",
-            latitude: 31.63017,
-            longitude: -91.55456,
-            chefId: "recF8ocLPwiadavlP",
-            startDate: Date(),
-            endDate: Date().addingTimeInterval(7200)
-        ))
+        DetailsView(
+            course: Course(
+                id: "rec1DauP3kw5Q76oo",
+                title: "Babka dough",
+                level: .intermediate,
+                duration: "2h",
+                date: "15 Dec - 4:00 pm",
+                image_url: "https://example.com/image.jpg",
+                description: "Description...",
+                locationName: "Riyadh",
+                latitude: 24.7136,
+                longitude: 46.6753,
+                chefId: "recF8ocLPwiadavlP",
+                startDate: Date(),
+                endDate: Date().addingTimeInterval(7200)
+            ),
+            courseRecordId: "rec1DauP3kw5Q76oo"
+        )
     }
 }

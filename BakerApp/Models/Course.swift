@@ -27,7 +27,7 @@ enum CourseLevel: String, Codable{
 }
 
 struct Course: Identifiable, Codable {
-    let id: UUID
+    let id: String
     let title: String
     let level: CourseLevel
     // نصوص للواجهة (ستُشتق لاحقاً من start/end)
