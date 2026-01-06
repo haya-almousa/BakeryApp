@@ -1,4 +1,4 @@
-// ProfileBookingsViewModel.swift
+
 import Foundation
 import Combine
 
