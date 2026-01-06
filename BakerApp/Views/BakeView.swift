@@ -82,19 +82,85 @@ struct BakeView: View {
                                 ScrollView {
                                     VStack(alignment: .leading, spacing: 16) {
                                         // Upcoming
+                                        // 1. Header
                                         Text("Upcoming")
-                                            .font(.headline)
+                                            .font(.title3)
+                                            .bold()
+                                            .frame(maxWidth: .infinity, alignment: .leading)
                                             .padding(.horizontal)
-                                        
-                                        UpcomingCard()
+
+                                        // 2. Dynamic Card
+                                        if let course = viewModel.upcomingCourse {
+                                            HStack(spacing: 16) {
+                                                // --- Date Box ---
+                                                VStack {
+                                                    // Extract Month (e.g., "Dec")
+                                                    Text(course.startDate?.formatted(.dateTime.month()) ?? "")
+                                                        .font(.caption)
+                                                        .foregroundStyle(.gray)
+                                                    
+                                                    // Extract Day (e.g., "15")
+                                                    Text(course.startDate?.formatted(.dateTime.day()) ?? "")
+                                                        .font(.title2)
+                                                        .bold()
+                                                        .foregroundStyle(.black)
+                                                }
+                                                .frame(width: 50, height: 60)
+                                                .background(Color.white)
+                                                .cornerRadius(10)
+                                                
+                                                // --- Course Details ---
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    Text(course.title)
+                                                        .font(.headline)
+                                                        .foregroundStyle(.black)
+                                                    
+                                                    HStack(spacing: 6) {
+                                                        Image(systemName: "location.fill") // Or generic pin
+                                                            .font(.caption2)
+                                                        Text(course.locationName) // Or use course.level.rawValue
+                                                            .font(.caption)
+                                                    }
+                                                    .foregroundStyle(.gray)
+                                                    
+                                                    HStack(spacing: 6) {
+                                                        Image(systemName: "clock")
+                                                            .font(.caption2)
+                                                        
+                                                        // Show formatted time (e.g. 4:00 PM)
+                                                        if let date = course.startDate {
+                                                            Text(date.formatted(date: .omitted, time: .shortened))
+                                                                .font(.caption)
+                                                        }
+                                                    }
+                                                    .foregroundStyle(.gray)
+                                                }
+                                                
+                                                Spacer()
+                                                
+                                                // --- Bell Icon ---
+                                                Image(systemName: "bell.fill")
+                                                    .foregroundStyle(Color.orange) // Or your app's accent color
+                                            }
+                                            .padding()
+                                            .background(Color(.systemGray6)) // Light gray background
+                                            .cornerRadius(16)
                                             .padding(.horizontal)
-                                        
+                                            
+                                        } else {
+                                            // Optional: Show this if nothing is upcoming
+                                            Text("No upcoming courses this week")
+                                                .font(.subheadline)
+                                                .foregroundStyle(.gray)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(.horizontal)
+                                        }
                                         // Popular courses
                                         Text("Popular courses")
                                             .font(.headline)
                                             .padding(.horizontal)
                                         
-                                        if filteredCourses.isEmpty {
+                                        if viewModel.popularCourses.isEmpty {
                                             Text("No courses match your search.")
                                                 .font(.callout)
                                                 .foregroundColor(.secondary)
@@ -102,7 +168,7 @@ struct BakeView: View {
                                                 .padding(.top, 8)
                                         } else {
                                             LazyVStack(spacing: 8) {
-                                                ForEach(filteredCourses) { course in
+                                                ForEach(viewModel.popularCourses) { course in
                                                     NavigationLink {
                                                         DetailsView(course: course, courseRecordId: course.id )
                                                     } label: {
@@ -125,9 +191,14 @@ struct BakeView: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .background(Color(UIColor.systemGray6))
                     .onAppear {
-                        // استدعِ مرة واحدة فقط
+                        // Load Courses if missing
                         if viewModel.courses.isEmpty && !viewModel.isLoading {
                             viewModel.fetchCourses()
+                        }
+                        
+                        // Load Bookings if missing
+                        if viewModel.bookedCourses.isEmpty {
+                            viewModel.fetchBookings()
                         }
                     }
                 }

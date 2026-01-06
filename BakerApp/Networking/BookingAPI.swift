@@ -93,10 +93,6 @@ final class BookingAPI {
         }
     // GET /course/:id/booking  ← نحققها بفلترة على جدول booking
     func fetchBookings(forCourseRecordId courseRecordId: String) async throws -> [BookingRecord] {
-        // OLD FORMULA: "FIND('\(courseRecordId)', ARRAYJOIN({course}))"
-        // NEW FORMULA: Since it's a text field, we can just check equality or search
-        
-        // Try this simple formula for text fields:
         let formula = "{courseid} = '\(courseRecordId)'"
         
         let query: [URLQueryItem] = [
@@ -114,7 +110,19 @@ final class BookingAPI {
             throw BookingAPIError.decodingFailed
         }
     }
-    
+    //retrive all bookings (for popular courses)
+    func fetchAllBookings() async throws -> [BookingRecord] {
+            let request = try makeRequest(path: "booking")
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else { throw BookingAPIError.invalidResponse }
+            guard (200...299).contains(http.statusCode) else { throw BookingAPIError.httpStatus(http.statusCode) }
+            do {
+                let decoded = try JSONDecoder().decode(BookingListResponse.self, from: data)
+                return decoded.records
+            } catch {
+                throw BookingAPIError.decodingFailed
+            }
+        }
     // DELETE /booking/:id
     func deleteBooking(bookingRecordId: String) async throws {
         let request = try makeRequest(path: "booking/\(bookingRecordId)", method: "DELETE")
@@ -123,3 +131,4 @@ final class BookingAPI {
         guard (200...299).contains(http.statusCode) else { throw BookingAPIError.httpStatus(http.statusCode) }
     }
 }
+

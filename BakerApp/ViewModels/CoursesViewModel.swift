@@ -12,6 +12,69 @@ class CoursesViewModel: ObservableObject {
     @Published var selectedCourse: Course? // For GET /course/:id
     @Published var isLoading = false // ⏳ Track loading state
     @Published var errorMessage: String? // ⚠️ Track errors
+    
+    var upcomingCourse: Course? {
+        /**
+        let now = Date()
+        // Calculate 3 days from now (3 * 24 * 60 * 60 seconds)
+        let threeDaysFromNow = now.addingTimeInterval(3 * 24 * 60 * 60)
+        **/
+        
+        // DEBUG: Hardcode "Now" to be Dec 13, 2025
+            let now: Date = {
+                var components = DateComponents()
+                components.year = 2025
+                components.month = 12
+                components.day = 13
+                components.hour = 9 // Optional: Set time to 9:00 AM
+                return Calendar.current.date(from: components) ?? Date()
+            }()
+            
+            // Calculate 3 days from this new "fake now"
+            let threeDaysFromNow = now.addingTimeInterval(3 * 24 * 60 * 60)
+        
+        // 1. Get the IDs of all courses the user has booked
+        let bookedIDs = bookedCourses.compactMap { $0.fields.course_id }
+        
+        // 2. Find the actual Course objects from your main list that match those IDs
+        let myCourses = courses.filter { bookedIDs.contains($0.id) }
+        
+        // 3. Filter: Keep only courses starting soon (Now < StartDate < 3 Days Later)
+        let comingSoon = myCourses.filter { course in
+            guard let start = course.startDate else { return false }
+            return start >= now && start <= threeDaysFromNow
+        }
+        
+        // 4. Sort by date and pick the first one
+        return comingSoon.sorted {
+            ($0.startDate ?? Date.distantFuture) < ($1.startDate ?? Date.distantFuture)
+        }.first
+    }
+    
+    @Published var bookedCourses: [BookingRecord] = []
+    
+    var popularCourses: [Course] {
+        // 1. Tally up the votes
+        var counts: [String: Int] = [:]
+        
+        for booking in bookedCourses {
+            if let id = booking.fields.course_id {
+                counts[id, default: 0] += 1
+            }
+        }
+        
+        // 2. Sort the IDs by popularity
+        let sortedIDs = counts.sorted { $0.value > $1.value }.map { $0.key }
+        
+        // 3. Find the actual Course objects for ALL popular IDs first
+        // compactMap automatically removes any courses that don't exist/were deleted
+        let validPopularCourses = sortedIDs.compactMap { id in
+            self.courses.first { $0.id == id }
+        }
+        
+        // 4. Now take the top 3 of the VALID courses
+        return Array(validPopularCourses.prefix(3))
+    }
 
     func fetchCourses() {
         // Start loading
@@ -236,6 +299,26 @@ class CoursesViewModel: ObservableObject {
                 }
             }
         }.resume()
+    }
+    //fetching all booked courses from bookingAPI (for popular courses)
+    func fetchBookings() {
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                // Call the new API function we just wrote
+                let bookings = try await BookingAPI.shared.fetchAllBookings()
+                
+                // update the published property
+                self.bookedCourses = bookings
+                self.isLoading = false
+                
+            } catch {
+                self.isLoading = false
+                self.errorMessage = "Failed to load bookings: \(error.localizedDescription)"
+            }
+        }
     }
 }
 

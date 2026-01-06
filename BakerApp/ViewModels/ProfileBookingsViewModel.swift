@@ -34,7 +34,10 @@ final class ProfileBookingsViewModel: ObservableObject {
         components.path = components.path + "/" + path
         if !queryItems.isEmpty { components.queryItems = queryItems }
         guard let url = components.url else { throw URLError(.badURL) }
-        var req = URLRequest(url: url)
+        
+        // CHANGE: Add cachePolicy to ignore local storage
+        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
+        
         req.httpMethod = "GET"
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         return req
@@ -58,10 +61,13 @@ final class ProfileBookingsViewModel: ObservableObject {
             //    - user_id = email (مع lowercase)
             let allBookings = try await fetchBookings(email: userEmail, userRecordId: userRecordId)
             
-            // 2.1) استبعد الحجوزات الملغاة
+            
             let activeBookings = allBookings.filter { rec in
-                let status = rec.fields.status?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-                return status != "cancelled"
+                // Safely unwrap status, default to empty string if nil
+                let status = rec.fields.status?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+                
+                // Check if it contains "cancel" (covers "Cancelled", "Canceled", "User Cancelled", etc.)
+                return !status.contains("cancel")
             }
             
             // استخرج course IDs وتخلّص من القيم الفارغة والمكررة
