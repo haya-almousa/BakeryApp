@@ -190,7 +190,7 @@ struct BakeView: View {
                     .navigationTitle("Home Bakery")
                     .navigationBarTitleDisplayMode(.inline)
                     .background(Color(UIColor.systemGray6))
-                    .onAppear {
+                    .task {
                         // Load Courses if missing
                         if viewModel.courses.isEmpty && !viewModel.isLoading {
                             viewModel.fetchCourses()
@@ -198,7 +198,7 @@ struct BakeView: View {
                         
                         // Load Bookings if missing
                         if viewModel.bookedCourses.isEmpty {
-                            viewModel.fetchBookings()
+                            await viewModel.fetchBookings()
                         }
                     }
                 }

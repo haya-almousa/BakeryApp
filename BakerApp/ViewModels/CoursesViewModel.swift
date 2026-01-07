@@ -301,11 +301,11 @@ class CoursesViewModel: ObservableObject {
         }.resume()
     }
     //fetching all booked courses from bookingAPI (for popular courses)
-    func fetchBookings() {
+    func fetchBookings() async{
+        
         isLoading = true
         errorMessage = nil
         
-        Task {
             do {
                 // Call the new API function we just wrote
                 let bookings = try await BookingAPI.shared.fetchAllBookings()
@@ -318,7 +318,6 @@ class CoursesViewModel: ObservableObject {
                 self.isLoading = false
                 self.errorMessage = "Failed to load bookings: \(error.localizedDescription)"
             }
-        }
     }
 }
 
@@ -336,7 +335,6 @@ private extension CoursesViewModel {
     
     static func date(fromUnix ts: Double?) -> Date? {
         guard let ts else { return nil }
-        // Airtable أرسلت بالثواني
         return Date(timeIntervalSince1970: ts)
     }
     

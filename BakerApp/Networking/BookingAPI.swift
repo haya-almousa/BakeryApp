@@ -61,9 +61,6 @@ final class BookingAPI {
                            userEmail: String,
                            seats: Int? = 1) async throws -> BookingRecord {
             
-            // 1. We removed the brackets [] around courseRecordId
-            // 2. We map 'userEmail' to 'user_id'
-            // 3. We set a default 'status' of "Pending"
             let payload = CreateBookingRequest(
                 fields: .init(
                     courseid: courseRecordId,
@@ -112,17 +109,17 @@ final class BookingAPI {
     }
     //retrive all bookings (for popular courses)
     func fetchAllBookings() async throws -> [BookingRecord] {
-            let request = try makeRequest(path: "booking")
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse else { throw BookingAPIError.invalidResponse }
-            guard (200...299).contains(http.statusCode) else { throw BookingAPIError.httpStatus(http.statusCode) }
-            do {
-                let decoded = try JSONDecoder().decode(BookingListResponse.self, from: data)
-                return decoded.records
-            } catch {
-                throw BookingAPIError.decodingFailed
-            }
-        }
+     let request = try makeRequest(path: "booking")
+     let (data, response) = try await URLSession.shared.data(for: request)
+     guard let http = response as? HTTPURLResponse else { throw BookingAPIError.invalidResponse }
+     guard (200...299).contains(http.statusCode) else { throw BookingAPIError.httpStatus(http.statusCode) }
+        do {
+           let decoded = try JSONDecoder().decode(BookingListResponse.self, from: data)
+             return decoded.records
+        } catch {
+            throw BookingAPIError.decodingFailed
+             }
+         }
     // DELETE /booking/:id
     func deleteBooking(bookingRecordId: String) async throws {
         let request = try makeRequest(path: "booking/\(bookingRecordId)", method: "DELETE")

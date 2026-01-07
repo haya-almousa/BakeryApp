@@ -29,7 +29,7 @@ final class SignInViewModel: ObservableObject {
     // رسالة خطأ لو فشل الدخول أو صار خطأ بالشبكة
 
     @Published var isPasswordVisible: Bool = false
-    // للتحكم بإظهار/إخفاء الباسوورد (عين 👁️)
+    // للتحكم بإظهار/إخفاء الباسوورد (عين )
 
     @Published var isSignedIn: Bool = false
     // إذا True يعني تم تسجيل الدخول بنجاح ونقدر نقفل الـ sheet
